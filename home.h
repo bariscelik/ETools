@@ -2,6 +2,7 @@
 #define HOME_H
 
 #include <QMainWindow>
+#include <beam.h>
 
 namespace Ui {
 class home;
@@ -15,8 +16,12 @@ public:
     explicit home(QWidget *parent = 0);
     ~home();
 
+private slots:
+    void on_commandLinkButton_7_clicked();
+
 private:
     Ui::home *ui;
+    beam beamSolver;
 };
 
 #endif // HOME_H

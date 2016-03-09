@@ -12,3 +12,9 @@ home::~home()
 {
     delete ui;
 }
+
+void home::on_commandLinkButton_7_clicked()
+{
+    qDebug("asdasd");
+    beamSolver.show();
+}

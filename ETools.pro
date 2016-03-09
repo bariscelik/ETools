@@ -13,8 +13,11 @@ TEMPLATE = app
 
 
 SOURCES += main.cpp\
-        home.cpp
+        home.cpp \
+    beam.cpp
 
-HEADERS  += home.h
+HEADERS  += home.h \
+    beam.h
 
-FORMS    += home.ui
+FORMS    += home.ui \
+    beam.ui
