@@ -1,5 +1,7 @@
 #include "beam.h"
 #include "ui_beam.h"
+#include <QtMath>
+
 
 beam::beam(QWidget *parent) :
     QDialog(parent),
@@ -15,6 +17,16 @@ beam::beam(QWidget *parent) :
 
     scene->addRect(0,-15,600,15,blackPen,QBrush(QColor("#75BAD1")))->setFlag(QGraphicsItem::ItemIsSelectable);
     //scene->selectedItems();
+    Support s;
+
+    s.fx = 500;
+    s.fy = 400;
+    s.posX = 200;
+    s.type = 2;
+    supports.append(s);
+    s.fx = 100;
+    supports.append(s);
+
     drawSupports(0,0);
     drawSupports(600,0);
 }
@@ -24,10 +36,48 @@ beam::~beam()
     delete ui;
 }
 
+void beam::reDrawCPanel()
+{
+    ui->treeWidget->clear();
+
+
+    // ----- FORCES -----
+    QTreeWidgetItem *allForces = new QTreeWidgetItem();
+    allForces->setText(0,"Kuvvetler");
+    allForces->setIcon(0,QIcon(":/files/images/force.svg"));
+    allForces->setData(0,Qt::UserRole,QVariant(1));
+    ui->treeWidget->addTopLevelItem(allForces);
+    int itemCount = forces.count();
+    for(int i=0; i<itemCount; ++i)
+    {
+        QVariant data;
+        data.setValue(forces.at(i));
+        QTreeWidgetItem *item = new QTreeWidgetItem();
+        item->setText(0,QString::number(forces.at(i).mag) + " N");
+        item->setData(0,Qt::UserRole,data);
+        allForces->addChild(item);
+    }
+    allForces->setExpanded(true);
+    // ----- FORCES -----
+
+    // ----- SUPPORTS -----
+    QTreeWidgetItem *allSupports = new QTreeWidgetItem();
+    allSupports->setText(0,"Mesnetler");
+    allSupports->setIcon(0,QIcon(":/files/images/support.svg"));
+    ui->treeWidget->addTopLevelItem(allSupports);
+    itemCount = supports.count();
+    for(int i=0; i<itemCount; ++i)
+    {
+        QTreeWidgetItem *item = new QTreeWidgetItem();
+        item->setText(0,"Mesnet " + QString::number(i));
+        allSupports->addChild(item);
+    }
+    allSupports->setExpanded(true);
+    // ----- SUPPORTS -----
+}
+
 void beam::drawSupports(int xpos, int ypos)
 {
-
-
     QPen blackPen(Qt::black);
     blackPen.setWidth(3);
 
@@ -44,9 +94,34 @@ void beam::drawSupports(int xpos, int ypos)
     QGraphicsItemGroup *group = scene->createItemGroup(supItms);
     group->setFlag(QGraphicsItem::ItemIsSelectable);
 
+    reDrawCPanel();
 }
 
-void beam::drawSingleForce(int posX,/*QPoint pos,*/ QString mag, int angle)
+void beam::addSingleForce(Force force)
+{
+    forces.append(force);
+
+    drawSingleForce(force);
+
+    qDebug() << "[EKLE] Yeni kuvvet eklendi\nBüyüklük:" << force.mag
+             << "\nKonum:" << force.posX
+             << "\nAçı:" << force.angle;
+
+    if(force.directionUp==true)
+    {
+        qDebug() << "Yön: Yukarı";
+    }else{
+        qDebug() << "Yön: Aşağı";
+}
+    reDrawCPanel();
+}
+
+void beam::addSupport(Support support)
+{
+
+}
+
+void beam::drawSingleForce(Force force)
 {
     QPen blackPen(Qt::black);
     blackPen.setWidth(3);
@@ -76,11 +151,15 @@ void beam::drawSingleForce(int posX,/*QPoint pos,*/ QString mag, int angle)
 
     QGraphicsItemGroup *group = scene->createItemGroup(arrowItms);
     group->setFlag(QGraphicsItem::ItemIsSelectable);
-    group->setPos(posX,-15);
-    group->setRotation(-angle);
-    group->setToolTip(QString(mag+"N"));
+    group->setPos(force.posX,-15);
+    group->setRotation(-force.angle);
+    group->setToolTip(QString::number(force.mag)+"N");
 
-
+    /*QGraphicsTextItem *title= scene->addText("dad");
+    title->setFlags(QGraphicsItem::ItemIsSelectable | QGraphicsItem::ItemIsFocusable | QGraphicsItem::ItemIsMovable);
+    title->setTextInteractionFlags(Qt::TextEditorInteraction);
+    title->setPos(100, 200);
+*/
 }
 
 void beam::on_pushButton_2_clicked()
@@ -90,5 +169,56 @@ void beam::on_pushButton_2_clicked()
 
 void beam::on_addForceBtn_clicked()
 {
-    drawSingleForce(ui->forceXInput->text().toInt(),ui->forceMagInput->text(),ui->forceAngleInput->text().toInt());
+    Force force;
+    force.posX = ui->forceXInput->text().toFloat();
+    force.mag = ui->forceMagInput->text().toFloat();
+    force.angle = ui->forceAngleInput->text().toFloat();
+    force.directionUp = ui->directionUpChk->isChecked();
+
+    addSingleForce(force);
+}
+
+void beam::on_solveBtn_clicked()
+{
+    const int fcount = forces.size();
+    qDebug() << "-----KUVVETLER-----\n";
+    for (int i = 0; i < fcount; ++i)
+    {
+        Force f = forces.at(i);
+        float rad = qDegreesToRadians(float(f.angle));
+        float fx,fy;
+
+        fx = f.mag * qCos(rad);
+        fy = f.mag * qSin(rad);
+
+        if(f.directionUp==true)
+        {
+            fx = -fx;
+            fy = -fy;
+        }
+
+        float Ny = (fy * f.posX) / 600;
+
+                qDebug() << "Büyüklük:" << f.mag
+                         << "\nKonum:" << f.posX
+                         << "\nAçı:" << f.angle << rad << qCos(rad) << fx << fy << Ny;
+
+                if(f.directionUp==true)
+                {
+                    qDebug() << "Yön: Yukarı";
+                }else{
+                    qDebug() << "Yön: Aşağı";
+                }
+
+
+    }
+}
+
+void beam::on_treeWidget_currentItemChanged(QTreeWidgetItem *current, QTreeWidgetItem *previous)
+{
+    scene->items().at(1)->setSelected(true);/*
+    if(current->parent()->data(0,Qt::UserRole).value<int>() == 1){
+        Force f = current->data(0,Qt::UserRole).value<Force>();
+
+    }*/
 }

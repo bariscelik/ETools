@@ -10,10 +10,29 @@
 #include <QGraphicsScene>
 #include <QGraphicsEllipseItem>
 #include <QGraphicsItem>
+#include <QGraphicsTextItem>
 #include <QGraphicsLineItem>
 #include <QGraphicsRectItem>
 #include <QGraphicsItemGroup>
 #include <QGraphicsPolygonItem>
+#include <QTreeWidgetItem>
+
+struct Force{
+  float posX;
+  float mag;
+  float angle;
+  bool directionUp;
+};
+
+struct Support{
+  float posX;
+  int type;
+  float fx;
+  float fy;
+};
+
+Q_DECLARE_METATYPE(Force)
+Q_DECLARE_METATYPE(Support)
 
 namespace Ui {
 class beam;
@@ -32,14 +51,22 @@ private slots:
 
     void on_addForceBtn_clicked();
 
+    void on_solveBtn_clicked();
+    void on_treeWidget_currentItemChanged(QTreeWidgetItem *current, QTreeWidgetItem *previous);
+
 private:
     Ui::beam *ui;
     QGraphicsScene *scene;
     QGraphicsEllipseItem *ellipse;
     QGraphicsRectItem *rectangle;
     QGraphicsLineItem *xline;
+    QList<Force> forces;
+    QList<Support> supports;
     void drawSupports(int xpos, int ypos);
-    void drawSingleForce(int posX, QString mag, int angle);
+    void addSingleForce(Force force);
+    void drawSingleForce(Force force);
+    void reDrawCPanel();
+    void addSupport(Support support);
 };
 
 #endif // BEAM_H

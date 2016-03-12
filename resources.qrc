@@ -1,0 +1,8 @@
+<RCC>
+    <qresource prefix="/files">
+        <file>images/force.svg</file>
+        <file>images/moment.svg</file>
+        <file>images/support.svg</file>
+        <file>lang.qm</file>
+    </qresource>
+</RCC>

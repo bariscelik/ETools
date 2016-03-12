@@ -36,29 +36,22 @@
         </property>
         <widget class="QWidget" name="tab">
          <attribute name="title">
-          <string>Mukavemet &amp;&amp; Yapısal</string>
+          <string>Strength of Material &amp;&amp; Structural</string>
          </attribute>
          <layout class="QGridLayout" name="gridLayout_4">
           <item row="0" column="0">
            <layout class="QGridLayout" name="gridLayout_3">
-            <item row="0" column="2">
-             <widget class="QCommandLinkButton" name="commandLinkButton_5">
-              <property name="text">
-               <string>Burkulma</string>
-              </property>
-             </widget>
-            </item>
             <item row="0" column="0">
              <widget class="QCommandLinkButton" name="commandLinkButton_3">
               <property name="text">
-               <string>Burulma</string>
+               <string>Torsion</string>
               </property>
              </widget>
             </item>
             <item row="0" column="1">
              <widget class="QCommandLinkButton" name="commandLinkButton_4">
               <property name="text">
-               <string>İnce Cidarlı Tüpler</string>
+               <string>Thin Walled Vessels</string>
               </property>
               <property name="autoRepeat">
                <bool>false</bool>
@@ -68,52 +61,24 @@
             <item row="1" column="0">
              <widget class="QCommandLinkButton" name="commandLinkButton_6">
               <property name="text">
-               <string>Kirişler</string>
+               <string>Beams</string>
               </property>
              </widget>
             </item>
             <item row="1" column="1" alignment="Qt::AlignVCenter">
              <widget class="QCommandLinkButton" name="commandLinkButton_7">
               <property name="autoFillBackground">
-               <bool>false</bool>
+               <bool>true</bool>
               </property>
               <property name="text">
-               <string>Kafes Sistemi</string>
+               <string>Trusses</string>
               </property>
              </widget>
             </item>
             <item row="1" column="2">
              <widget class="QCommandLinkButton" name="commandLinkButton_8">
               <property name="text">
-               <string>Mohr Dairesi</string>
-              </property>
-             </widget>
-            </item>
-           </layout>
-          </item>
-         </layout>
-        </widget>
-        <widget class="QWidget" name="tab_2">
-         <property name="enabled">
-          <bool>true</bool>
-         </property>
-         <attribute name="title">
-          <string>Isı Transferi</string>
-         </attribute>
-         <layout class="QVBoxLayout" name="verticalLayout_3">
-          <item>
-           <layout class="QGridLayout" name="gridLayout_2">
-            <item row="0" column="0">
-             <widget class="QCommandLinkButton" name="commandLinkButton">
-              <property name="text">
-               <string>CommandLinkButton</string>
-              </property>
-             </widget>
-            </item>
-            <item row="0" column="1">
-             <widget class="QCommandLinkButton" name="commandLinkButton_2">
-              <property name="text">
-               <string>CommandLinkButton</string>
+               <string>Mohr's Circle</string>
               </property>
              </widget>
             </item>
@@ -138,7 +103,7 @@
    </property>
    <widget class="QMenu" name="menuDosya">
     <property name="title">
-     <string>Hakkında</string>
+     <string>About</string>
     </property>
     <addaction name="actionYard_m"/>
    </widget>
@@ -146,7 +111,7 @@
   </widget>
   <action name="actionYard_m">
    <property name="text">
-    <string>Yardım</string>
+    <string>Help</string>
    </property>
   </action>
  </widget>
