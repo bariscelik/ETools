@@ -6,6 +6,7 @@ home::home(QWidget *parent) :
     ui(new Ui::home)
 {
     ui->setupUi(this);
+    setFixedSize(this->geometry().width(),this->geometry().height());
 }
 
 home::~home()
@@ -15,5 +16,11 @@ home::~home()
 
 void home::on_commandLinkButton_7_clicked()
 {
-    beamSolver.show();
+
+}
+
+void home::on_commandLinkButton_6_clicked()
+{
+    beamSolver.setWindowFlags(Qt::Window);
+    beamSolver.showFullScreen();
 }

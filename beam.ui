@@ -7,11 +7,14 @@
     <x>0</x>
     <y>0</y>
     <width>991</width>
-    <height>421</height>
+    <height>709</height>
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Dialog</string>
+   <string>Beam Solver</string>
+  </property>
+  <property name="modal">
+   <bool>true</bool>
   </property>
   <layout class="QHBoxLayout" name="horizontalLayout_2">
    <item>
@@ -122,15 +125,6 @@
        <property name="lineWidth">
         <number>1</number>
        </property>
-       <property name="verticalScrollBarPolicy">
-        <enum>Qt::ScrollBarAlwaysOff</enum>
-       </property>
-       <property name="horizontalScrollBarPolicy">
-        <enum>Qt::ScrollBarAlwaysOff</enum>
-       </property>
-       <property name="sizeAdjustPolicy">
-        <enum>QAbstractScrollArea::AdjustToContents</enum>
-       </property>
        <property name="backgroundBrush">
         <brush brushstyle="Dense2Pattern">
          <color alpha="255">
@@ -158,6 +152,16 @@
       <widget class="QPushButton" name="solveBtn">
        <property name="text">
         <string>SOLVE</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QCustomPlot" name="widget" native="true">
+       <property name="minimumSize">
+        <size>
+         <width>100</width>
+         <height>400</height>
+        </size>
        </property>
       </widget>
      </item>
@@ -197,6 +201,12 @@
    <class>BeamView</class>
    <extends>QGraphicsView</extends>
    <header>beamview.h</header>
+  </customwidget>
+  <customwidget>
+   <class>QCustomPlot</class>
+   <extends>QWidget</extends>
+   <header>qcustomplot.h</header>
+   <container>1</container>
   </customwidget>
  </customwidgets>
  <tabstops>

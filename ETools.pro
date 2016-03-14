@@ -6,20 +6,22 @@
 
 QT       += core gui
 
-greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
+greaterThan(QT_MAJOR_VERSION, 4): QT += widgets printsupport
 
 TARGET = ETools
 TEMPLATE = app
 
 TRANSLATIONS += lang.ts
 SOURCES += main.cpp\
-        home.cpp \
+    home.cpp \
     beam.cpp \
-    beamview.cpp
+    beamview.cpp \
+    qcustomplot.cpp
 
 HEADERS  += home.h \
     beam.h \
-    beamview.h
+    beamview.h \
+    qcustomplot.h
 
 FORMS    += home.ui \
     beam.ui

@@ -15,24 +15,38 @@
 #include <QGraphicsRectItem>
 #include <QGraphicsItemGroup>
 #include <QGraphicsPolygonItem>
+#include <QGraphicsPathItem>
 #include <QTreeWidgetItem>
 
-struct Force{
+unsigned const int beamL = 800;
+
+struct Component
+{
+    QGraphicsItem *item;
+};
+
+struct Force : Component{
   float posX;
   float mag;
   float angle;
   bool directionUp;
 };
 
-struct Support{
+struct Support : Component{
   float posX;
   int type;
   float fx;
   float fy;
 };
 
+struct Moment : Component{
+  float mag;
+  bool directionCw; // clockwise direction
+};
+
 Q_DECLARE_METATYPE(Force)
 Q_DECLARE_METATYPE(Support)
+Q_DECLARE_METATYPE(Moment)
 
 namespace Ui {
 class beam;
@@ -53,20 +67,24 @@ private slots:
 
     void on_solveBtn_clicked();
     void on_treeWidget_currentItemChanged(QTreeWidgetItem *current, QTreeWidgetItem *previous);
-
 private:
     Ui::beam *ui;
     QGraphicsScene *scene;
-    QGraphicsEllipseItem *ellipse;
-    QGraphicsRectItem *rectangle;
-    QGraphicsLineItem *xline;
     QList<Force> forces;
     QList<Support> supports;
-    void drawSupports(int xpos, int ypos);
+    QList<Moment> moments;
+    QList< QPair<float,float> > resForces;
+    QGraphicsItem *drawSupport(Support s);
+    QGraphicsItem *drawSingleForce(Force f);
+    QGraphicsItem *drawMoment(Moment m);
     void addSingleForce(Force force);
-    void drawSingleForce(Force force);
-    void reDrawCPanel();
     void addSupport(Support support);
+    void addMoment(Moment moment);
+    void reDrawCPanel();
+    void reDrawScene();
+    void plotDiagrams(QVector<double> x, QVector<double> y);
+    float realBeamL;
+    float LFactor;
 };
 
 #endif // BEAM_H
