@@ -3,6 +3,7 @@
 
 #include <QMainWindow>
 #include <beam.h>
+#include <tempdist.h>
 
 namespace Ui {
 class home;
@@ -18,12 +19,13 @@ public:
 
 private slots:
     void on_commandLinkButton_7_clicked();
-
     void on_commandLinkButton_6_clicked();
+    void on_commandLinkButton_clicked();
 
 private:
     Ui::home *ui;
     beam beamSolver;
+    tempdist tempDist;
 };
 
 #endif // HOME_H

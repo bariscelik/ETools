@@ -1,200 +1,322 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
  <class>beam</class>
- <widget class="QDialog" name="beam">
+ <widget class="QMainWindow" name="beam">
   <property name="geometry">
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>991</width>
-    <height>709</height>
+    <width>1521</width>
+    <height>822</height>
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Beam Solver</string>
+   <string>MainWindow</string>
   </property>
-  <property name="modal">
-   <bool>true</bool>
-  </property>
-  <layout class="QHBoxLayout" name="horizontalLayout_2">
-   <item>
-    <layout class="QVBoxLayout" name="verticalLayout_3">
-     <item>
-      <layout class="QHBoxLayout" name="horizontalLayout">
-       <item>
-        <widget class="QGroupBox" name="groupBox">
-         <property name="sizePolicy">
-          <sizepolicy hsizetype="Maximum" vsizetype="Maximum">
-           <horstretch>0</horstretch>
-           <verstretch>0</verstretch>
-          </sizepolicy>
-         </property>
-         <property name="title">
-          <string>Force</string>
-         </property>
-         <layout class="QVBoxLayout" name="verticalLayout_2">
+  <widget class="QWidget" name="centralwidget">
+   <layout class="QVBoxLayout" name="verticalLayout">
+    <item>
+     <widget class="QSplitter" name="splitter_2">
+      <property name="orientation">
+       <enum>Qt::Horizontal</enum>
+      </property>
+      <widget class="QWidget" name="layoutWidget">
+       <layout class="QVBoxLayout" name="verticalLayout_3">
+        <item>
+         <layout class="QHBoxLayout" name="horizontalLayout">
           <item>
-           <widget class="QLineEdit" name="forceMagInput">
+           <widget class="QGroupBox" name="groupBox">
             <property name="sizePolicy">
-             <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+             <sizepolicy hsizetype="Maximum" vsizetype="Maximum">
               <horstretch>0</horstretch>
               <verstretch>0</verstretch>
              </sizepolicy>
             </property>
-            <property name="text">
-             <string/>
+            <property name="title">
+             <string>Force</string>
             </property>
-            <property name="placeholderText">
-             <string>Magnitude (N)</string>
-            </property>
+            <layout class="QVBoxLayout" name="verticalLayout_2">
+             <item>
+              <widget class="QLineEdit" name="forceMagInput">
+               <property name="sizePolicy">
+                <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+                 <horstretch>0</horstretch>
+                 <verstretch>0</verstretch>
+                </sizepolicy>
+               </property>
+               <property name="text">
+                <string>50</string>
+               </property>
+               <property name="placeholderText">
+                <string>Magnitude (N)</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QLineEdit" name="forceXInput">
+               <property name="sizePolicy">
+                <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+                 <horstretch>0</horstretch>
+                 <verstretch>0</verstretch>
+                </sizepolicy>
+               </property>
+               <property name="text">
+                <string>1</string>
+               </property>
+               <property name="placeholderText">
+                <string>Position [x] (m)</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <layout class="QHBoxLayout" name="horizontalLayout_6">
+               <property name="sizeConstraint">
+                <enum>QLayout::SetMaximumSize</enum>
+               </property>
+               <item>
+                <widget class="QLineEdit" name="forceAngleInput">
+                 <property name="sizePolicy">
+                  <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+                   <horstretch>0</horstretch>
+                   <verstretch>0</verstretch>
+                  </sizepolicy>
+                 </property>
+                 <property name="text">
+                  <string>90</string>
+                 </property>
+                 <property name="placeholderText">
+                  <string>Angle (°)</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QCheckBox" name="directionUpChk">
+                 <property name="text">
+                  <string>Up</string>
+                 </property>
+                </widget>
+               </item>
+              </layout>
+             </item>
+             <item>
+              <widget class="QPushButton" name="addForceBtn">
+               <property name="sizePolicy">
+                <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+                 <horstretch>0</horstretch>
+                 <verstretch>0</verstretch>
+                </sizepolicy>
+               </property>
+               <property name="text">
+                <string>Add Force</string>
+               </property>
+              </widget>
+             </item>
+            </layout>
            </widget>
           </item>
           <item>
-           <widget class="QLineEdit" name="forceXInput">
-            <property name="sizePolicy">
-             <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
-              <horstretch>0</horstretch>
-              <verstretch>0</verstretch>
-             </sizepolicy>
-            </property>
-            <property name="placeholderText">
-             <string>Position [x] (m)</string>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <layout class="QHBoxLayout" name="horizontalLayout_6">
-            <property name="sizeConstraint">
-             <enum>QLayout::SetMaximumSize</enum>
-            </property>
-            <item>
-             <widget class="QLineEdit" name="forceAngleInput">
-              <property name="sizePolicy">
-               <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
-                <horstretch>0</horstretch>
-                <verstretch>0</verstretch>
-               </sizepolicy>
-              </property>
-              <property name="placeholderText">
-               <string>Angle (°)</string>
-              </property>
-             </widget>
-            </item>
-            <item>
-             <widget class="QCheckBox" name="directionUpChk">
-              <property name="text">
-               <string>Up</string>
-              </property>
-             </widget>
-            </item>
-           </layout>
-          </item>
-          <item>
-           <widget class="QPushButton" name="addForceBtn">
-            <property name="sizePolicy">
-             <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
-              <horstretch>0</horstretch>
-              <verstretch>0</verstretch>
-             </sizepolicy>
-            </property>
+           <widget class="QPushButton" name="pushButton_2">
             <property name="text">
-             <string>Add Force</string>
+             <string>Rotate at clockwise</string>
             </property>
            </widget>
           </item>
          </layout>
-        </widget>
-       </item>
-       <item>
-        <widget class="QPushButton" name="pushButton_2">
+        </item>
+        <item>
+         <widget class="BeamView" name="graphicsView">
+          <property name="frameShape">
+           <enum>QFrame::StyledPanel</enum>
+          </property>
+          <property name="frameShadow">
+           <enum>QFrame::Sunken</enum>
+          </property>
+          <property name="lineWidth">
+           <number>1</number>
+          </property>
+          <property name="backgroundBrush">
+           <brush brushstyle="Dense2Pattern">
+            <color alpha="255">
+             <red>238</red>
+             <green>238</green>
+             <blue>238</blue>
+            </color>
+           </brush>
+          </property>
+          <property name="interactive">
+           <bool>true</bool>
+          </property>
+          <property name="renderHints">
+           <set>QPainter::Antialiasing|QPainter::HighQualityAntialiasing|QPainter::SmoothPixmapTransform|QPainter::TextAntialiasing</set>
+          </property>
+          <property name="viewportUpdateMode">
+           <enum>QGraphicsView::FullViewportUpdate</enum>
+          </property>
+          <property name="rubberBandSelectionMode">
+           <enum>Qt::IntersectsItemBoundingRect</enum>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QPushButton" name="solveBtn">
+          <property name="text">
+           <string>SOLVE</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QCustomPlot" name="widget" native="true">
+          <property name="minimumSize">
+           <size>
+            <width>100</width>
+            <height>400</height>
+           </size>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </widget>
+      <widget class="QSplitter" name="splitter">
+       <property name="orientation">
+        <enum>Qt::Vertical</enum>
+       </property>
+       <widget class="QTreeWidget" name="treeWidget">
+        <property name="alternatingRowColors">
+         <bool>true</bool>
+        </property>
+        <property name="selectionMode">
+         <enum>QAbstractItemView::ExtendedSelection</enum>
+        </property>
+        <property name="sortingEnabled">
+         <bool>true</bool>
+        </property>
+        <property name="animated">
+         <bool>true</bool>
+        </property>
+        <column>
          <property name="text">
-          <string>Rotate at clockwise</string>
+          <string>Components</string>
          </property>
-        </widget>
-       </item>
-      </layout>
-     </item>
-     <item>
-      <widget class="BeamView" name="graphicsView">
-       <property name="frameShape">
-        <enum>QFrame::StyledPanel</enum>
-       </property>
-       <property name="frameShadow">
-        <enum>QFrame::Sunken</enum>
-       </property>
-       <property name="lineWidth">
-        <number>1</number>
-       </property>
-       <property name="backgroundBrush">
-        <brush brushstyle="Dense2Pattern">
-         <color alpha="255">
-          <red>238</red>
-          <green>238</green>
-          <blue>238</blue>
-         </color>
-        </brush>
-       </property>
-       <property name="interactive">
-        <bool>true</bool>
-       </property>
-       <property name="renderHints">
-        <set>QPainter::Antialiasing|QPainter::HighQualityAntialiasing|QPainter::SmoothPixmapTransform|QPainter::TextAntialiasing</set>
-       </property>
-       <property name="viewportUpdateMode">
-        <enum>QGraphicsView::FullViewportUpdate</enum>
-       </property>
-       <property name="rubberBandSelectionMode">
-        <enum>Qt::IntersectsItemBoundingRect</enum>
-       </property>
+        </column>
+       </widget>
+       <widget class="QTreeWidget" name="treeWidget_2">
+        <column>
+         <property name="text">
+          <string notr="true">1</string>
+         </property>
+        </column>
+       </widget>
       </widget>
-     </item>
-     <item>
-      <widget class="QPushButton" name="solveBtn">
-       <property name="text">
-        <string>SOLVE</string>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="QCustomPlot" name="widget" native="true">
-       <property name="minimumSize">
-        <size>
-         <width>100</width>
-         <height>400</height>
-        </size>
-       </property>
-      </widget>
-     </item>
-    </layout>
-   </item>
-   <item>
-    <widget class="QTreeWidget" name="treeWidget">
-     <property name="sizePolicy">
-      <sizepolicy hsizetype="Preferred" vsizetype="Expanding">
-       <horstretch>0</horstretch>
-       <verstretch>0</verstretch>
-      </sizepolicy>
-     </property>
-     <property name="alternatingRowColors">
-      <bool>true</bool>
-     </property>
-     <property name="selectionMode">
-      <enum>QAbstractItemView::ExtendedSelection</enum>
-     </property>
-     <property name="sortingEnabled">
-      <bool>true</bool>
-     </property>
-     <property name="animated">
-      <bool>true</bool>
-     </property>
-     <column>
-      <property name="text">
-       <string>Components</string>
-      </property>
-     </column>
-    </widget>
-   </item>
-  </layout>
+     </widget>
+    </item>
+   </layout>
+  </widget>
+  <widget class="QMenuBar" name="menubar">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>0</y>
+     <width>1521</width>
+     <height>25</height>
+    </rect>
+   </property>
+   <widget class="QMenu" name="menuInsert">
+    <property name="title">
+     <string>Insert</string>
+    </property>
+    <addaction name="actionKuvvet"/>
+    <addaction name="actionMoment"/>
+    <addaction name="actionDistributed_Load"/>
+    <addaction name="actionSupport"/>
+   </widget>
+   <widget class="QMenu" name="menuFile">
+    <property name="title">
+     <string>File</string>
+    </property>
+    <addaction name="action_New"/>
+    <addaction name="action_Save"/>
+    <addaction name="actionSave_as"/>
+    <addaction name="actionExit"/>
+   </widget>
+   <addaction name="menuFile"/>
+   <addaction name="menuInsert"/>
+  </widget>
+  <widget class="QStatusBar" name="statusbar"/>
+  <widget class="QToolBar" name="toolBar">
+   <property name="windowTitle">
+    <string>toolBar</string>
+   </property>
+   <attribute name="toolBarArea">
+    <enum>TopToolBarArea</enum>
+   </attribute>
+   <attribute name="toolBarBreak">
+    <bool>false</bool>
+   </attribute>
+   <addaction name="actionKuvvet"/>
+   <addaction name="actionMoment"/>
+   <addaction name="actionDistributed_Load"/>
+   <addaction name="actionSupport"/>
+  </widget>
+  <action name="actionKuvvet">
+   <property name="icon">
+    <iconset resource="resources.qrc">
+     <normaloff>:/files/images/force.svg</normaloff>:/files/images/force.svg</iconset>
+   </property>
+   <property name="text">
+    <string>Force</string>
+   </property>
+  </action>
+  <action name="actionMoment">
+   <property name="icon">
+    <iconset resource="resources.qrc">
+     <normaloff>:/files/images/moment.svg</normaloff>:/files/images/moment.svg</iconset>
+   </property>
+   <property name="text">
+    <string>Moment</string>
+   </property>
+  </action>
+  <action name="actionDistributed_Load">
+   <property name="icon">
+    <iconset resource="resources.qrc">
+     <normaloff>:/files/images/distload.svg</normaloff>:/files/images/distload.svg</iconset>
+   </property>
+   <property name="text">
+    <string>Distributed Load</string>
+   </property>
+  </action>
+  <action name="actionSupport">
+   <property name="icon">
+    <iconset resource="resources.qrc">
+     <normaloff>:/files/images/support.svg</normaloff>:/files/images/support.svg</iconset>
+   </property>
+   <property name="text">
+    <string>Support</string>
+   </property>
+  </action>
+  <action name="action_New">
+   <property name="text">
+    <string>&amp;New</string>
+   </property>
+  </action>
+  <action name="action_Save">
+   <property name="text">
+    <string>&amp;Save</string>
+   </property>
+  </action>
+  <action name="actionSave_as">
+   <property name="text">
+    <string>Save as</string>
+   </property>
+  </action>
+  <action name="actionExit">
+   <property name="icon">
+    <iconset resource="resources.qrc">
+     <normaloff>:/files/images/delete.svg</normaloff>:/files/images/delete.svg</iconset>
+   </property>
+   <property name="text">
+    <string>Exit</string>
+   </property>
+  </action>
  </widget>
  <customwidgets>
   <customwidget>
@@ -210,13 +332,19 @@
   </customwidget>
  </customwidgets>
  <tabstops>
-  <tabstop>forceMagInput</tabstop>
+  <tabstop>addForceBtn</tabstop>
   <tabstop>forceXInput</tabstop>
   <tabstop>forceAngleInput</tabstop>
   <tabstop>directionUpChk</tabstop>
-  <tabstop>addForceBtn</tabstop>
+  <tabstop>forceMagInput</tabstop>
   <tabstop>pushButton_2</tabstop>
+  <tabstop>graphicsView</tabstop>
+  <tabstop>solveBtn</tabstop>
+  <tabstop>treeWidget</tabstop>
+  <tabstop>treeWidget_2</tabstop>
  </tabstops>
- <resources/>
+ <resources>
+  <include location="resources.qrc"/>
+ </resources>
  <connections/>
 </ui>

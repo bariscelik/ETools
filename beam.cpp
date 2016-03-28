@@ -38,11 +38,38 @@ public:
     }
 };
 
+// rectangles  method
+double calcIntegral(double a,double b,double (*f)(double),int n)
+{
+    double sum=0, x, h;
+
+    h = (b - a) / n;
+    x = a;
+    for(int i=0; i<n; ++i)
+    {
+        x = a + i * h;
+        sum += h * f(x + 0.5 * h);
+    }
+
+    return sum;
+}
+
+double fuvb(double x)
+{
+    return 3 * std::pow(x,2); // 3*x^2
+}
+
 beam::beam(QWidget *parent) :
-    QDialog(parent),
+    QMainWindow(parent),
     ui(new Ui::beam)
 {
     ui->setupUi(this);
+
+    double area = calcIntegral(1,7,fuvb,200);
+
+
+
+
     scene = new QGraphicsScene(this);
     ui->graphicsView->setScene(scene);
     QPen blackPen(Qt::black);
@@ -72,6 +99,8 @@ beam::beam(QWidget *parent) :
     ui->forceMagInput->setValidator(new PointValidator(0,999999,4,this));
     ui->forceAngleInput->setValidator(new PointValidator(0,180,4,this));
     ui->forceXInput->setValidator(new PointValidator(0,realBeamL,4,this));
+
+    ui->treeWidget->setContextMenuPolicy(Qt::CustomContextMenu);
 
     ui->widget->hide();
 
@@ -164,6 +193,7 @@ void beam::addSingleForce(Force force)
     force.item = drawSingleForce(force);
 
     forces.append(force);
+    force.posX = beam::DistributedLoad;
 
     qDebug() << "[EKLE] Yeni kuvvet eklendi\nBüyüklük:" << force.mag
              << "\nKonum:" << force.posX
@@ -286,10 +316,13 @@ bool sortResForces(const QPair<float,float>& e1, const QPair<float,float>& e2) {
 void beam::on_solveBtn_clicked()
 {
     resForces.clear();
+
     const int fcount = forces.size();
-    QVector<double> x(fcount+1),y(fcount+1);
-    x[fcount] = 0;y[fcount] = 0;
+
+    float totalX=0,totalY=0,totalMoment=0;
+
     qDebug() << "-----KUVVETLER-----\n";
+
     for (int i = 0; i < fcount; ++i)
     {
         Force f = forces.at(i);
@@ -299,11 +332,16 @@ void beam::on_solveBtn_clicked()
         fx = f.mag * qCos(rad);
         fy = f.mag * qSin(rad);
 
-        if(f.directionUp==true)
+        if(f.directionUp==false)
         {
             fx = -fx;
             fy = -fy;
         }
+
+        totalX += fx;
+        totalY += fy;
+
+        totalMoment += fy * f.posX;
 
         QPair<float,float> res;
         res.first = f.posX;
@@ -312,30 +350,33 @@ void beam::on_solveBtn_clicked()
     }
 
 
-    /*float Ny = (fy * f.posX) / beamL;
+    qDebug() << "Mesnet Tepkisi 1(Ny):" << totalMoment / realBeamL -totalY
+             << "\nMesnet Tepkisi 2(Ny):" << -totalMoment / realBeamL;
 
-            qDebug() << "Büyüklük:" << f.mag
-                     << "\nKonum:" << f.posX
-                     << "\nAçı:" << f.angle << rad << qCos(rad) << fx << fy << Ny;
+    Support s1=supports.at(0),s2=supports.at(1);
+    s1.fy = totalMoment / realBeamL -totalY;
+    s2.fy = -totalMoment / realBeamL;
+    supports.replace(0,s1);
+    supports.replace(1,s2);
 
-            if(f.directionUp==true)
-            {
-                qDebug() << "Yön: Yukarı";
-            }else{
-                qDebug() << "Yön: Aşağı";
-            }
-*/
+    QPair<float,float> res;
+    res.first = supports.at(0).posX;
+    res.second = supports.at(0).fy;
+    resForces.append(res);
 
-    qSort(resForces.begin(), resForces.end(), sortResForces); // :confused:
+    res.first = supports.at(1).posX;
+    res.second = supports.at(1).fy;
+    resForces.append(res);
+
+    qSort(resForces.begin(), resForces.end(), sortResForces);
 
 
 
     qDebug() << "\n" << resForces.at(0).first << resForces.at(1).first << resForces.at(2).first
               << "\n" << resForces.at(0).second << resForces.at(1).second << resForces.at(2).second;
 
-
-    //plotDiagrams(x,y);
-    //ui->widget->show();
+    plotDiagrams(resForces);
+    ui->widget->show();
 }
 
 
@@ -358,18 +399,69 @@ void beam::on_treeWidget_currentItemChanged(QTreeWidgetItem *current, QTreeWidge
     }
 }
 
-void beam::plotDiagrams(QVector<double> x,QVector<double> y)
+void beam::plotDiagrams(QList< QPair<float,float> > points)
 {
-    ui->widget->addGraph();
-    ui->widget->graph(0)->setData(x, y);
-    ui->widget->graph(0)->setScatterStyle(QCPScatterStyle(QCPScatterStyle::ssCircle, QPen(Qt::black), QBrush(Qt::white), 6));
-    ui->widget->setInteraction(QCP::iRangeZoom, true);
+    int pointCount = points.count();
+    QVector<double> x(pointCount),y(pointCount);
+
+    int totalY=0;
+    for(int i=0;i<pointCount;++i)
+    {
+
+        x.append(points.at(i).first);
+        y.append(totalY);
+        totalY += points.at(i).second;
+        qDebug() << x.last() << y.last();
+        x.append(points.at(i).first);
+        y.append(totalY);
+        qDebug() << x.last() << y.last();
+
+    }
+
+    QCPCurve *newCurve = new QCPCurve(ui->widget->xAxis, ui->widget->yAxis);
+    newCurve->setData(x, y);
+    newCurve->setScatterStyle(QCPScatterStyle(QCPScatterStyle::ssCircle, QPen(Qt::black), QBrush(Qt::white), 5));
+    newCurve->setBrush(QBrush("#F2FF00"));
+    ui->widget->addPlottable(newCurve);
+    ui->widget->setInteractions(QCP::iRangeDrag | QCP::iRangeZoom | QCP::iSelectAxes |
+                                QCP::iSelectLegend | QCP::iSelectPlottables);
 
     ui->widget->xAxis->setLabel("x(m)");
     ui->widget->yAxis->setLabel("V(N)");
 
     ui->widget->xAxis->setRange(-100, 100);
     ui->widget->yAxis->setRange(-100, 100 );
-    ui->widget->graph(0)->setBrush(QBrush("#ccc"));
+    ui->widget->axisRect()->setupFullAxesBox();
+    ui->widget->rescaleAxes();
     ui->widget->replot();
+
+    connect(ui->widget, SIGNAL(mouseMove(QMouseEvent*)),this,SLOT(showPointToolTip(QMouseEvent*)));
+
+}
+
+void beam::showPointToolTip(QMouseEvent *event)
+{
+
+    double x = ui->widget->xAxis->pixelToCoord(event->pos().x());
+    double y = ui->widget->yAxis->pixelToCoord(event->pos().y());
+
+    setToolTip(QString("Koordinat: (%1 , %2)").arg(x).arg(y));
+
+}
+void beam::on_treeWidget_customContextMenuRequested(const QPoint &pos)
+{
+    QTreeWidget *tree = ui->treeWidget;
+
+    QTreeWidgetItem *nd = tree->itemAt( pos );
+
+    qDebug()<<pos<<nd->data(0,Qt::UserRole);
+
+    QAction *delAct = new QAction(QIcon(":/files/images/delete.svg"), tr("&Sil"), this);
+    delAct->setStatusTip(tr("new sth"));
+    connect(delAct, SIGNAL(triggered()), this, SLOT(newDev()));
+
+    QMenu menu(this);
+    menu.addAction(delAct);
+
+    menu.exec( tree->mapToGlobal(pos) );
 }

@@ -4,5 +4,9 @@
         <file>images/moment.svg</file>
         <file>images/support.svg</file>
         <file>lang.qm</file>
+        <file>images/plus.svg</file>
+        <file>images/delete.svg</file>
+        <file>images/ok.svg</file>
+        <file>images/distload.svg</file>
     </qresource>
 </RCC>

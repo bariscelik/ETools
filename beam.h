@@ -4,7 +4,6 @@
 #include <QMainWindow>
 #include <QHBoxLayout>
 #include <QToolBar>
-#include <QDialog>
 #include <QtCore>
 #include <QtGui>
 #include <QGraphicsScene>
@@ -39,6 +38,10 @@ struct Support : Component{
   float fy;
 };
 
+struct DistLoad : Component{
+  float x;
+};
+
 struct Moment : Component{
   float mag;
   bool directionCw; // clockwise direction
@@ -52,21 +55,27 @@ namespace Ui {
 class beam;
 }
 
-class beam : public QDialog
+class beam : public QMainWindow
 {
     Q_OBJECT
 
 public:
     explicit beam(QWidget *parent = 0);
     ~beam();
+    enum ForceTypes
+    {
+        SingleForce = 1,
+        DistributedLoad =2
+    };
 
+public slots:
+    void showPointToolTip(QMouseEvent *event);
 private slots:
     void on_pushButton_2_clicked();
-
     void on_addForceBtn_clicked();
-
     void on_solveBtn_clicked();
     void on_treeWidget_currentItemChanged(QTreeWidgetItem *current, QTreeWidgetItem *previous);
+    void on_treeWidget_customContextMenuRequested(const QPoint &pos);
 private:
     Ui::beam *ui;
     QGraphicsScene *scene;
@@ -82,7 +91,7 @@ private:
     void addMoment(Moment moment);
     void reDrawCPanel();
     void reDrawScene();
-    void plotDiagrams(QVector<double> x, QVector<double> y);
+    void plotDiagrams(QList<QPair<float, float> > points);
     float realBeamL;
     float LFactor;
 };

@@ -16,15 +16,24 @@ SOURCES += main.cpp\
     home.cpp \
     beam.cpp \
     beamview.cpp \
-    qcustomplot.cpp
+    qcustomplot.cpp \
+    tempdist.cpp \
+    lineform.cpp
 
 HEADERS  += home.h \
     beam.h \
     beamview.h \
-    qcustomplot.h
+    qcustomplot.h \
+    tempdist.h \
+    lineform.h
 
 FORMS    += home.ui \
-    beam.ui
+    tempdist.ui \
+    beam.ui \
+    lineform.ui
 
 RESOURCES += \
     resources.qrc
+
+LIBS += \
+       -lboost_system\
