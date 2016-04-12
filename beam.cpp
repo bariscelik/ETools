@@ -1,6 +1,8 @@
 #include "beam.h"
 #include "ui_beam.h"
 #include <QtMath>
+#include <QSvgGenerator>
+#include <exprtk.hpp>
 
 class PointValidator : public QDoubleValidator
 {
@@ -38,8 +40,38 @@ public:
     }
 };
 
+
+
+template <typename T>
+double mathSolve(std::string exp,T xval)
+{
+   typedef exprtk::symbol_table<T> symbol_table_t;
+   typedef exprtk::expression<T> expression_t;
+   typedef exprtk::parser<T> parser_t;
+
+   std::string expression_string = exp;
+
+   T x;
+
+   symbol_table_t symbol_table;
+   symbol_table.add_variable("x",x);
+   symbol_table.add_constants();
+
+   expression_t expression;
+   expression.register_symbol_table(symbol_table);
+
+   parser_t parser;
+   parser.compile(expression_string,expression);
+
+   x = xval;
+
+   T y = expression.value();
+
+   return y;
+}
+
 // rectangles  method
-double calcIntegral(double a,double b,double (*f)(double),int n)
+double calcIntegral(double a,double b,std::string f,int n)
 {
     double sum=0, x, h;
 
@@ -48,15 +80,10 @@ double calcIntegral(double a,double b,double (*f)(double),int n)
     for(int i=0; i<n; ++i)
     {
         x = a + i * h;
-        sum += h * f(x + 0.5 * h);
+        sum += h * mathSolve<double>(f, x + 0.5 * h);
     }
 
     return sum;
-}
-
-double fuvb(double x)
-{
-    return 3 * std::pow(x,2); // 3*x^2
 }
 
 beam::beam(QWidget *parent) :
@@ -64,11 +91,6 @@ beam::beam(QWidget *parent) :
     ui(new Ui::beam)
 {
     ui->setupUi(this);
-
-    double area = calcIntegral(1,7,fuvb,200);
-
-
-
 
     scene = new QGraphicsScene(this);
     ui->graphicsView->setScene(scene);
@@ -78,7 +100,10 @@ beam::beam(QWidget *parent) :
     realBeamL = 2;
     LFactor = beamL / realBeamL;
 
-    scene->addRect(0,-15,beamL,15,blackPen,QBrush(QColor("#75BAD1")))->setFlag(QGraphicsItem::ItemIsSelectable);
+    QGraphicsRectItem *bar = scene->addRect(0,-15,beamL,15,blackPen,QBrush(QColor("#75BAD1")));
+    bar->setFlag(QGraphicsItem::ItemIsSelectable);
+    bar->setAcceptHoverEvents(true);
+
 
 
     Support s;
@@ -90,15 +115,8 @@ beam::beam(QWidget *parent) :
     addSupport(s);
     s.posX = realBeamL;
     addSupport(s);
-    /*Moment m;
-    m.mag = 500;
-    m.directionCw = true;
 
-    addMoment(m);*/
     reDrawCPanel();
-    ui->forceMagInput->setValidator(new PointValidator(0,999999,4,this));
-    ui->forceAngleInput->setValidator(new PointValidator(0,180,4,this));
-    ui->forceXInput->setValidator(new PointValidator(0,realBeamL,4,this));
 
     ui->treeWidget->setContextMenuPolicy(Qt::CustomContextMenu);
 
@@ -127,10 +145,8 @@ void beam::reDrawCPanel()
     for(int i=0; i<itemCount; ++i)
     {
         QTreeWidgetItem *item = new QTreeWidgetItem();
-        QVariant data;
-        data.setValue(forces.at(i));
         item->setText(0,QString::number(forces.at(i).mag) + " N");
-        item->setData(0,Qt::UserRole,data);
+        item->setData(0,Qt::UserRole,QVariant(i));
         allForces->addChild(item);
     }
     allForces->setExpanded(true);
@@ -147,14 +163,31 @@ void beam::reDrawCPanel()
     for(int i=0; i<itemCount; ++i)
     {
         QTreeWidgetItem *item = new QTreeWidgetItem();
-        QVariant data;
-        data.setValue(supports.at(i));
         item->setText(0,"Mesnet " + QString::number(i));
-        item->setData(0,Qt::UserRole,data);
+        item->setData(0,Qt::UserRole,QVariant(i));
         allSupports->addChild(item);
     }
     allSupports->setExpanded(true);
     // ----- SUPPORTS -----
+
+    // ----- FORCES -----
+    QTreeWidgetItem *allDistLoads = new QTreeWidgetItem();
+    allDistLoads->setText(0,"Distributed Loads");
+    allDistLoads->setIcon(0,QIcon(":/files/images/distload.png"));
+    allDistLoads->setData(0,Qt::UserRole,QVariant(3));
+    ui->treeWidget->addTopLevelItem(allDistLoads);
+    itemCount = distributedloads.count();
+
+    for(int i=0; i<itemCount; ++i)
+    {
+        QTreeWidgetItem *item = new QTreeWidgetItem();
+        item->setText(0,QString::number(distributedloads.at(i).x1) + " - " + QString::number(distributedloads.at(i).x2));
+        item->setData(0,Qt::UserRole,QVariant(i));
+        allDistLoads->addChild(item);
+    }
+    allDistLoads->setExpanded(true);
+
+    // ----- FORCES -----
 }
 
 /*!
@@ -193,7 +226,6 @@ void beam::addSingleForce(Force force)
     force.item = drawSingleForce(force);
 
     forces.append(force);
-    force.posX = beam::DistributedLoad;
 
     qDebug() << "[EKLE] Yeni kuvvet eklendi\nBüyüklük:" << force.mag
              << "\nKonum:" << force.posX
@@ -206,6 +238,12 @@ void beam::addSingleForce(Force force)
         qDebug() << "Yön: Aşağı";
     }
 
+}
+
+void beam::addDistLoad(DistLoad dl)
+{
+    dl.item = drawDistLoad(dl);
+    distributedloads.append(dl);
 }
 
 void beam::addSupport(Support support)
@@ -224,13 +262,30 @@ void beam::addMoment(Moment moment)
 QGraphicsItem *beam::drawMoment(Moment m)
 {
     QPen blackPen(Qt::black);
-    blackPen.setWidth(2);
-    QPainterPath path;
-        path.arcMoveTo(640,-30,30,50,20);
-        path.arcTo(640,-30,30,50,20,90);
+    blackPen.setWidth(3);
 
+    int cw = 1;
+    if(m.directionCw) {cw = -1;}
+    QPainterPath path;
+    path.moveTo(0,0);
+    path.arcTo(-20,-50,50,50,-90,cw*180);
+
+    QPolygonF Triangle;
+    Triangle.append(QPointF(path.currentPosition().x(),path.currentPosition().y()-7));
+    Triangle.append(QPointF(path.currentPosition().x() - cw * 15,path.currentPosition().y()));
+    Triangle.append(QPointF(path.currentPosition().x(),path.currentPosition().y()+7));
+
+    QGraphicsPolygonItem *end = scene->addPolygon(Triangle,QPen(),QBrush(QColor("#000")));
     QGraphicsPathItem *start = scene->addPath(path,blackPen,QBrush(QColor("transparent")));
-    start->setFlag(QGraphicsItem::ItemIsSelectable);
+    QList<QGraphicsItem*> itms;
+    itms.append(start);
+    itms.append(end);
+
+    QGraphicsItemGroup *moment = scene->createItemGroup(itms);
+
+    moment->setFlag(QGraphicsItem::ItemIsSelectable);
+    moment->setPos(820,20);
+
     /*QGraphicsPolygonItem *end = scene->addPolygon(Triangle,QPen(),QBrush(QColor("#000")));
 
     QList<QGraphicsItem*> arrowItms;
@@ -244,7 +299,7 @@ QGraphicsItem *beam::drawMoment(Moment m)
     group->setRotation(-force.angle);
     group->setToolTip(QString::number(force.mag)+"N");
 */
-    return start;
+    return moment;
 }
 
 QGraphicsItem *beam::drawSingleForce(Force force)
@@ -261,7 +316,7 @@ QGraphicsItem *beam::drawSingleForce(Force force)
     QLineF line(20,0,50,0);
 
 
-    if(ui->directionUpChk->isChecked())
+    if(force.directionUp)
     {
         Triangle.clear();
         Triangle.append(QPointF(30,-5));
@@ -292,21 +347,57 @@ QGraphicsItem *beam::drawSingleForce(Force force)
 */
 }
 
-void beam::on_pushButton_2_clicked()
+QGraphicsItem *beam::drawDistLoad(DistLoad dl)
 {
-    ui->graphicsView->rotate(50);
-}
+    int HFactor = LFactor * 0.5;
+    QPen blackPen(Qt::black);
+    blackPen.setWidth(3);
+    float x1pos = HFactor * dl.x1;
 
-void beam::on_addForceBtn_clicked()
-{
-    Force force;
-    force.posX = ui->forceXInput->text().toDouble();
-    force.mag = ui->forceMagInput->text().toDouble();
-    force.angle = ui->forceAngleInput->text().toFloat();
-    force.directionUp = ui->directionUpChk->isChecked();
-    addSingleForce(force);
+    QPainterPath path;
+    path.moveTo(x1pos, - 15 -HFactor * mathSolve<double>(dl.f.toStdString(),x1pos));
 
-    reDrawCPanel();
+    QList<QGraphicsItem*> arrowItms;
+    QList<QGraphicsItem*> allArrowItms;
+
+    for(double x=dl.x1; x<=dl.x2;x+=0.2)
+    {
+        double y = mathSolve<double>(dl.f.toStdString(),x);
+        double xpos = HFactor * x;
+        path.lineTo(xpos, - 15 - HFactor * y);
+
+        QPolygonF Triangle;
+        Triangle.append(QPointF(20,-5));
+        Triangle.append(QPointF(0,0));
+        Triangle.append(QPointF(20,+5));
+        QLineF line(20,0,HFactor * y - 1,0);
+
+
+        arrowItms.append(scene->addLine(line,blackPen));
+        arrowItms.append(scene->addPolygon(Triangle,QPen(),QBrush(QColor("#000"))));
+
+        QGraphicsItemGroup *gr = scene->createItemGroup(arrowItms);
+        gr->setRotation(-90);
+        gr->setPos(xpos,-15);
+
+        allArrowItms.append(gr);
+        arrowItms.clear();
+    }
+
+    QGraphicsPathItem *curve = scene->addPath(path,blackPen);
+
+
+    allArrowItms.append(curve);
+
+    QGraphicsItemGroup *group = scene->createItemGroup(allArrowItms);
+    group->setPos(0,0);
+    group->setFlag(QGraphicsItem::ItemIsSelectable);
+    return group;
+    /*QGraphicsTextItem *title= scene->addText("dad");
+    title->setFlags(QGraphicsItem::ItemIsSelectable | QGraphicsItem::ItemIsFocusable | QGraphicsItem::ItemIsMovable);
+    title->setTextInteractionFlags(Qt::TextEditorInteraction);
+    title->setPos(100, 200);
+*/
 }
 
 bool sortResForces(const QPair<float,float>& e1, const QPair<float,float>& e2) {
@@ -318,10 +409,30 @@ void beam::on_solveBtn_clicked()
     resForces.clear();
 
     const int fcount = forces.size();
+    const int dlcount = distributedloads.size();
 
     float totalX=0,totalY=0,totalMoment=0;
 
+
+
     qDebug() << "-----KUVVETLER-----\n";
+
+    for (int i = 0; i < dlcount; ++i)
+    {
+        DistLoad dl = distributedloads.at(i);
+
+        double dlArea = calcIntegral(dl.x1,dl.x2,dl.f.toStdString(),200);
+        totalY += -dlArea;
+
+        double centerofGravityMoment = calcIntegral(dl.x1,dl.x2,dl.f.toStdString().append("*x"),200);
+        totalMoment += -centerofGravityMoment;
+
+        QPair<float,float> res;
+        res.first = centerofGravityMoment / dlArea;
+        res.second = -dlArea;
+        resForces.append(res);
+    }
+
 
     for (int i = 0; i < fcount; ++i)
     {
@@ -384,16 +495,36 @@ void beam::on_solveBtn_clicked()
 void beam::on_treeWidget_currentItemChanged(QTreeWidgetItem *current, QTreeWidgetItem *previous)
 {
     scene->clearSelection();
-    if(current){
-        if(current->parent()){
-            if(current->parent()->data(0,Qt::UserRole).value<int>() == 1){
-                Force i = current->data(0,Qt::UserRole).value<Force>();
-                i.item->setSelected(true);
-            }else if(current->parent()->data(0,Qt::UserRole).value<int>() == 2){
-                Support i = current->data(0,Qt::UserRole).value<Support>();
-                i.item->setSelected(true);
-            }
 
+    if(current){
+
+        if(current->parent()){
+            int type = current->parent()->data(0,Qt::UserRole).value<int>();
+            int pos = current->data(0,Qt::UserRole).value<int>();
+            switch(type)
+            {
+                case 1 :
+                {
+                    Force f = forces.at(pos);
+                    f.item->setSelected(true);
+                    break;
+                }
+                case 2 :
+                {
+                    Support s = supports.at(pos);
+                    s.item->setSelected(true);
+                    break;
+                }
+                case 3 :
+                {
+                    DistLoad dl = distributedloads.at(pos);
+                    dl.item->setSelected(true);
+                    break;
+                }
+            default:
+
+            break;
+            }
 
         }
     }
@@ -445,7 +576,7 @@ void beam::showPointToolTip(QMouseEvent *event)
     double x = ui->widget->xAxis->pixelToCoord(event->pos().x());
     double y = ui->widget->yAxis->pixelToCoord(event->pos().y());
 
-    setToolTip(QString("Koordinat: (%1 , %2)").arg(x).arg(y));
+    setToolTip(QString(tr("Position: (%1 , %2)")).arg(x).arg(y));
 
 }
 void beam::on_treeWidget_customContextMenuRequested(const QPoint &pos)
@@ -454,14 +585,196 @@ void beam::on_treeWidget_customContextMenuRequested(const QPoint &pos)
 
     QTreeWidgetItem *nd = tree->itemAt( pos );
 
-    qDebug()<<pos<<nd->data(0,Qt::UserRole);
+    if(nd->parent())
+        {
+        qDebug()<<pos<<nd->data(0,Qt::UserRole);
 
-    QAction *delAct = new QAction(QIcon(":/files/images/delete.svg"), tr("&Sil"), this);
-    delAct->setStatusTip(tr("new sth"));
-    connect(delAct, SIGNAL(triggered()), this, SLOT(newDev()));
+        QAction *delAct = new QAction(QIcon(":/files/images/delete.svg"), tr("&Delete"), this);
+        connect(delAct, SIGNAL(triggered()), this, SLOT(componentsActionDelete()));
 
-    QMenu menu(this);
-    menu.addAction(delAct);
+        QMenu menu(this);
+        menu.addAction(delAct);
 
-    menu.exec( tree->mapToGlobal(pos) );
+        menu.exec( tree->mapToGlobal(pos) );
+    }
+}
+
+void beam::componentsActionDelete()
+{
+    QTreeWidgetItem *selected = ui->treeWidget->selectedItems().at(0);
+    int pos = selected->data(0,Qt::UserRole).value<int>();
+
+        if(selected->parent()){
+            int type = selected->parent()->data(0,Qt::UserRole).value<int>();
+            int pos = selected->data(0,Qt::UserRole).value<int>();
+            switch(type)
+            {
+                case 1 :
+                {
+                    Force f = forces.at(pos);
+                    scene->removeItem(f.item);
+                    forces.removeAt(pos);
+                    break;
+                }
+                case 2 :
+                {
+                    Support s = supports.at(pos);
+                    scene->removeItem(s.item);
+                    supports.removeAt(pos);
+                    break;
+                }
+                case 3 :
+                {
+                    DistLoad dl = distributedloads.at(pos);
+                    scene->removeItem(dl.item);
+                    distributedloads.removeAt(pos);
+                    break;
+                }
+            default:
+
+            break;
+            }
+
+        }
+
+    reDrawCPanel();
+}
+
+void beam::on_actionForce_triggered()
+{
+    QDialog dialog(this);
+    dialog.setWindowTitle(tr("Add Force"));
+    QFormLayout form(&dialog);
+
+    QLineEdit *forceMagInput = new QLineEdit(&dialog);
+    QLineEdit *forceXInput = new QLineEdit(&dialog);
+    QLineEdit *forceAngleInput = new QLineEdit(&dialog);
+    QCheckBox *directionUpChk = new QCheckBox(&dialog);
+
+
+    forceMagInput->setValidator(new PointValidator(0,999999,4,this));
+    forceAngleInput->setValidator(new PointValidator(0,180,4,this));
+    forceXInput->setValidator(new PointValidator(0,realBeamL,4,this));
+
+    form.addRow(tr("Magnitude (N):"),forceMagInput);
+    form.addRow(tr("Position [x] (m):"),forceXInput);
+    form.addRow(tr("Angle (°):"),forceAngleInput);
+    form.addRow(tr("Up:"),directionUpChk);
+
+
+
+    QDialogButtonBox buttonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel,
+                               Qt::Horizontal, &dialog);
+    form.addRow(&buttonBox);
+    QObject::connect(&buttonBox, SIGNAL(accepted()), &dialog, SLOT(accept()));
+    QObject::connect(&buttonBox, SIGNAL(rejected()), &dialog, SLOT(reject()));
+
+
+    dialog.setFixedSize(form.sizeHint());
+
+    if (dialog.exec() == QDialog::Accepted) {
+            Force force;
+            force.posX = forceXInput->text().toDouble();
+            force.mag = forceMagInput->text().toDouble();
+            force.angle = forceAngleInput->text().toFloat();
+            force.directionUp = directionUpChk->isChecked();
+            addSingleForce(force);
+            reDrawCPanel();
+    }
+}
+
+
+void beam::on_actionDistributed_Load_triggered()
+{
+    QDialog dialog(this);
+    dialog.setWindowTitle(tr("Add Distributed Load"));
+    QFormLayout form(&dialog);
+
+    QLineEdit *x1 = new QLineEdit(&dialog);
+    QLineEdit *x2 = new QLineEdit(&dialog);
+    QLineEdit *f = new QLineEdit(&dialog);
+
+    x1->setValidator(new PointValidator(0,realBeamL,4,this));
+    x2->setValidator(new PointValidator(0,realBeamL,4,this));
+
+    form.addRow(tr("Position [x1] (m):"),x1);
+    form.addRow(tr("Position [x2] (m):"),x2);
+    form.addRow(tr("Formula f(x) : "),f);
+
+    QDialogButtonBox buttonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel,
+                               Qt::Horizontal, &dialog);
+    form.addRow(&buttonBox);
+    QObject::connect(&buttonBox, SIGNAL(accepted()), &dialog, SLOT(accept()));
+    QObject::connect(&buttonBox, SIGNAL(rejected()), &dialog, SLOT(reject()));
+
+    dialog.setFixedSize(form.sizeHint());
+
+    if (dialog.exec() == QDialog::Accepted) {
+            DistLoad dl;
+            dl.x1 = x1->text().toDouble();
+            dl.x2 = x2->text().toDouble();
+            dl.f = f->text();
+            addDistLoad(dl);
+            reDrawCPanel();
+    }
+}
+
+void beam::on_actionMoment_triggered()
+{
+    QDialog dialog(this);
+    dialog.setWindowTitle(tr("Add Moment"));
+    QFormLayout form(&dialog);
+
+    QLineEdit *mag = new QLineEdit(&dialog);
+    QCheckBox *cw = new QCheckBox(&dialog);
+    mag->setValidator(new PointValidator(0,999999999,4,this));
+
+    form.addRow(tr("Magnitude (Nm):"),mag);
+    form.addRow(tr("Clock-Wise Direction :"),cw);
+
+    QDialogButtonBox buttonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel,
+                               Qt::Horizontal, &dialog);
+
+    form.addRow(&buttonBox);
+
+    QObject::connect(&buttonBox, SIGNAL(accepted()), &dialog, SLOT(accept()));
+    QObject::connect(&buttonBox, SIGNAL(rejected()), &dialog, SLOT(reject()));
+
+    dialog.setFixedSize(form.sizeHint());
+
+    if (dialog.exec() == QDialog::Accepted) {
+            Moment m;
+            m.mag = mag->text().toDouble();
+            m.directionCw = cw->isChecked();
+            addMoment(m);
+            reDrawCPanel();
+    }
+}
+
+void beam::on_action_Save_triggered()
+{
+
+}
+
+void beam::on_actionSave_as_triggered()
+{
+
+    QFileDialog a(this);
+    QString fileName = a.getSaveFileName(this,tr("Save as"),"~","Images (*.png *.xpm *.jpg);;Text files (*.txt);;XML files (*.xml)");
+
+    if(QFileInfo(fileName).suffix() == "svg")
+    {
+        QSvgGenerator svgGen;
+
+        svgGen.setFileName(fileName);
+        svgGen.setSize(ui->graphicsView->size());
+        svgGen.setViewBox(scene->sceneRect());
+
+        QPainter painter( &svgGen );
+        scene->render( &painter );
+    }else{
+        QPixmap pixMap = QPixmap::grabWidget(ui->graphicsView);
+        pixMap.save(fileName);
+
+    }
 }

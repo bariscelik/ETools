@@ -51,6 +51,7 @@ private:
     QGraphicsTextItem *bLineLabel;
     QGraphicsTextItem *tLineLabel;
     void solveConvection(double tLeft, double tRight, double tTop, double tBottom, double ht, double k, unsigned int h, unsigned int l);
+    void solveAll(double tLeft, double tRight, double tTop, double tBottom, double ht, double k, unsigned int h, unsigned int l);
 };
 
 #endif // TEMPDIST_H

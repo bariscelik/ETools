@@ -4,7 +4,7 @@
 #
 #-------------------------------------------------
 
-QT       += core gui
+QT       += core gui svg
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets printsupport
 
@@ -25,7 +25,10 @@ HEADERS  += home.h \
     beamview.h \
     qcustomplot.h \
     tempdist.h \
-    lineform.h
+    lineform.h \
+    exprtk.hpp
+
+PRECOMPILED_HEADER  = exprtk.hpp
 
 FORMS    += home.ui \
     tempdist.ui \
@@ -34,6 +37,3 @@ FORMS    += home.ui \
 
 RESOURCES += \
     resources.qrc
-
-LIBS += \
-       -lboost_system\

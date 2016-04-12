@@ -39,7 +39,9 @@ struct Support : Component{
 };
 
 struct DistLoad : Component{
-  float x;
+  double x1;
+  double x2;
+  QString f;
 };
 
 struct Moment : Component{
@@ -50,6 +52,7 @@ struct Moment : Component{
 Q_DECLARE_METATYPE(Force)
 Q_DECLARE_METATYPE(Support)
 Q_DECLARE_METATYPE(Moment)
+Q_DECLARE_METATYPE(DistLoad)
 
 namespace Ui {
 class beam;
@@ -62,25 +65,26 @@ class beam : public QMainWindow
 public:
     explicit beam(QWidget *parent = 0);
     ~beam();
-    enum ForceTypes
-    {
-        SingleForce = 1,
-        DistributedLoad =2
-    };
 
 public slots:
     void showPointToolTip(QMouseEvent *event);
 private slots:
-    void on_pushButton_2_clicked();
-    void on_addForceBtn_clicked();
     void on_solveBtn_clicked();
     void on_treeWidget_currentItemChanged(QTreeWidgetItem *current, QTreeWidgetItem *previous);
     void on_treeWidget_customContextMenuRequested(const QPoint &pos);
+    void on_actionForce_triggered();
+    void on_actionDistributed_Load_triggered();
+    void on_actionMoment_triggered();
+    void on_action_Save_triggered();
+    void componentsActionDelete();
+    void on_actionSave_as_triggered();
+
 private:
     Ui::beam *ui;
     QGraphicsScene *scene;
     QList<Force> forces;
     QList<Support> supports;
+    QList<DistLoad> distributedloads;
     QList<Moment> moments;
     QList< QPair<float,float> > resForces;
     QGraphicsItem *drawSupport(Support s);
@@ -94,6 +98,8 @@ private:
     void plotDiagrams(QList<QPair<float, float> > points);
     float realBeamL;
     float LFactor;
+    QGraphicsItem *drawDistLoad(DistLoad dl);
+    void addDistLoad(DistLoad dl);
 };
 
 #endif // BEAM_H

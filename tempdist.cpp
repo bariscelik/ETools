@@ -395,15 +395,89 @@ void tempdist::solveConvection(double tLeft,double tRight,double tTop,double tBo
        ui->textEdit->setText(s);
 }
 
+
+void tempdist::solveAll(double tLeft,double tRight,double tTop,double tBottom,double ht,double k,unsigned int h,unsigned int l)
+{
+
+    using namespace std;
+
+    unsigned int sizeH = h - 2, sizeL = l-1;
+
+    unsigned int dof = sizeH * sizeL;
+
+    vector< vector<double> > m(sizeH,vector<double>(sizeL,0));
+
+    vector< vector<double> > resMatrix(dof,vector<double>(dof+1,0));
+
+
+    int resRow=0;
+
+    for (unsigned i = 0; i < sizeH; ++ i)
+    {
+        for (unsigned j = 0; j < sizeL; ++ j)
+        {
+            m[i][j] = sizeL * i + j;
+        }
+    }
+
+    for (unsigned i = 0; i < sizeH; ++ i)
+    {
+        for (unsigned j = 0; j < sizeL; ++ j)
+        {
+            int resValue=0;
+            bool tr=false,
+                 tb=false,
+                 tt=false,
+                 tl=false;
+            if(j == sizeL-1 ){resValue+=2*ht*tRight/k;tr=true;}
+            if(i == sizeH-1 ){resValue+=tBottom;tb=true;}
+            if(i == 0 ){resValue+=tTop;tt=true;}
+            if(j == 0 ){resValue+=tLeft;tl=true;}
+
+            resMatrix[resRow][dof] = resValue;
+
+            for(int k=0;k<dof;++k)
+            {
+                if(j==sizeL-1)
+                {
+                    resMatrix[resRow][m[i][j]]=4+2*ht/k;
+                    resMatrix[resRow][m[i][j-1]]=-2;
+                }else{
+                    resMatrix[resRow][m[i][j]]=4;
+                    tl=true;
+                }
+
+
+                if(tr==false){resMatrix[resRow][m[i][j+1]]=-1;}
+                if(tb==false){resMatrix[resRow][m[i+1][j]]=-1;}
+                if(tt==false){resMatrix[resRow][m[i-1][j]]=-1;}
+                if(tl==false){resMatrix[resRow][m[i][j-1]]=-1;}
+
+            }
+
+            ++resRow;
+        }
+    }
+
+    vector<double> x(dof);
+    x = gauss(resMatrix);
+
+    QString s;
+    s.append("Result:");
+       for (unsigned int i=0; i<dof; i++) {
+           s = s + "\n T_" + QString::number(i) + "= "+ QString::number(x[i]) + "C°";
+       }
+       ui->textEdit->setText(s);
+}
+
 void tempdist::on_actionSolve_triggered()
 {
-    solveConvection(lines.at(0).temp,
-          lines.at(2).temp,
-          lines.at(3).temp,
+    solveAll(lines.at(0).temp,
+             lines.at(2).temp,
           lines.at(1).temp,
+          lines.at(3).temp,
           lines.at(2).h,
           ui->lineEdit->text().toDouble(),
           ui->height->text().toInt(),
           ui->width->text().toInt());
 }
-
