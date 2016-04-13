@@ -25,10 +25,7 @@ HEADERS  += home.h \
     beamview.h \
     qcustomplot.h \
     tempdist.h \
-    lineform.h \
-    exprtk.hpp
-
-PRECOMPILED_HEADER  = exprtk.hpp
+    lineform.h
 
 FORMS    += home.ui \
     tempdist.ui \
@@ -37,3 +34,4 @@ FORMS    += home.ui \
 
 RESOURCES += \
     resources.qrc
+LIBS += -lmuparser

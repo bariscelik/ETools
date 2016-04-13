@@ -17,7 +17,7 @@
 #include <QGraphicsPathItem>
 #include <QTreeWidgetItem>
 
-unsigned const int beamL = 800;
+const double beamL = 800;
 
 struct Component
 {
@@ -96,8 +96,8 @@ private:
     void reDrawCPanel();
     void reDrawScene();
     void plotDiagrams(QList<QPair<float, float> > points);
-    float realBeamL;
-    float LFactor;
+    double realBeamL;
+    double LFactor;
     QGraphicsItem *drawDistLoad(DistLoad dl);
     void addDistLoad(DistLoad dl);
 };

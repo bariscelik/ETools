@@ -2,7 +2,7 @@
 #include "ui_beam.h"
 #include <QtMath>
 #include <QSvgGenerator>
-#include <exprtk.hpp>
+#include <muParser.h>
 
 class PointValidator : public QDoubleValidator
 {
@@ -45,27 +45,26 @@ public:
 template <typename T>
 double mathSolve(std::string exp,T xval)
 {
-   typedef exprtk::symbol_table<T> symbol_table_t;
-   typedef exprtk::expression<T> expression_t;
-   typedef exprtk::parser<T> parser_t;
+    T y;
 
-   std::string expression_string = exp;
+      try
+      {
+        T x;
 
-   T x;
+        x = xval;
 
-   symbol_table_t symbol_table;
-   symbol_table.add_variable("x",x);
-   symbol_table.add_constants();
+        mu::Parser p;
 
-   expression_t expression;
-   expression.register_symbol_table(symbol_table);
+        p.DefineVar("x", &x);
+        p.SetExpr(exp);
 
-   parser_t parser;
-   parser.compile(expression_string,expression);
+        y = p.Eval();
 
-   x = xval;
-
-   T y = expression.value();
+      }
+      catch (mu::Parser::exception_type &e)
+      {
+        std::cout << e.GetMsg() << std::endl;
+      }
 
    return y;
 }
@@ -349,10 +348,10 @@ QGraphicsItem *beam::drawSingleForce(Force force)
 
 QGraphicsItem *beam::drawDistLoad(DistLoad dl)
 {
-    int HFactor = LFactor * 0.5;
+    double HFactor = LFactor * 0.5;
     QPen blackPen(Qt::black);
     blackPen.setWidth(3);
-    float x1pos = HFactor * dl.x1;
+    double x1pos = LFactor * dl.x1;
 
     QPainterPath path;
     path.moveTo(x1pos, - 15 -HFactor * mathSolve<double>(dl.f.toStdString(),x1pos));
@@ -360,10 +359,12 @@ QGraphicsItem *beam::drawDistLoad(DistLoad dl)
     QList<QGraphicsItem*> arrowItms;
     QList<QGraphicsItem*> allArrowItms;
 
-    for(double x=dl.x1; x<=dl.x2;x+=0.2)
+    for(double x=dl.x1; x<=dl.x2; x= x+ 0.1)
     {
+
         double y = mathSolve<double>(dl.f.toStdString(),x);
-        double xpos = HFactor * x;
+        double xpos = LFactor * x;
+        qDebug() << x << xpos << y;
         path.lineTo(xpos, - 15 - HFactor * y);
 
         QPolygonF Triangle;
@@ -383,6 +384,7 @@ QGraphicsItem *beam::drawDistLoad(DistLoad dl)
         allArrowItms.append(gr);
         arrowItms.clear();
     }
+
 
     QGraphicsPathItem *curve = scene->addPath(path,blackPen);
 
@@ -425,12 +427,14 @@ void beam::on_solveBtn_clicked()
         totalY += -dlArea;
 
         double centerofGravityMoment = calcIntegral(dl.x1,dl.x2,dl.f.toStdString().append("*x"),200);
-        totalMoment += -centerofGravityMoment;
+
 
         QPair<float,float> res;
         res.first = centerofGravityMoment / dlArea;
         res.second = -dlArea;
         resForces.append(res);
+
+        totalMoment += -dlArea * res.first;
     }
 
 
@@ -585,17 +589,20 @@ void beam::on_treeWidget_customContextMenuRequested(const QPoint &pos)
 
     QTreeWidgetItem *nd = tree->itemAt( pos );
 
-    if(nd->parent())
+    if(nd){
+
+        if(nd->parent())
         {
-        qDebug()<<pos<<nd->data(0,Qt::UserRole);
+            qDebug()<<pos<<nd->data(0,Qt::UserRole);
 
-        QAction *delAct = new QAction(QIcon(":/files/images/delete.svg"), tr("&Delete"), this);
-        connect(delAct, SIGNAL(triggered()), this, SLOT(componentsActionDelete()));
+            QAction *delAct = new QAction(QIcon(":/files/images/delete.svg"), tr("&Delete"), this);
+            connect(delAct, SIGNAL(triggered()), this, SLOT(componentsActionDelete()));
 
-        QMenu menu(this);
-        menu.addAction(delAct);
+            QMenu menu(this);
+            menu.addAction(delAct);
 
-        menu.exec( tree->mapToGlobal(pos) );
+            menu.exec( tree->mapToGlobal(pos) );
+        }
     }
 }
 
@@ -758,8 +765,8 @@ void beam::on_action_Save_triggered()
 
 void beam::on_actionSave_as_triggered()
 {
-
     QFileDialog a(this);
+
     QString fileName = a.getSaveFileName(this,tr("Save as"),"~","Images (*.png *.xpm *.jpg);;Text files (*.txt);;XML files (*.xml)");
 
     if(QFileInfo(fileName).suffix() == "svg")
