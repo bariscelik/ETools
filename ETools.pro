@@ -10,7 +10,7 @@ greaterThan(QT_MAJOR_VERSION, 4): QT += widgets printsupport
 
 TARGET = ETools
 TEMPLATE = app
-
+include($$PWD/qtpropertybrowser/src/qtpropertybrowser.pri)
 TRANSLATIONS += lang.ts
 SOURCES += main.cpp\
     home.cpp \
@@ -35,3 +35,5 @@ FORMS    += home.ui \
 RESOURCES += \
     resources.qrc
 LIBS += -lmuparser
+
+

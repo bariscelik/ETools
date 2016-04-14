@@ -16,6 +16,9 @@
 #include <QGraphicsPolygonItem>
 #include <QGraphicsPathItem>
 #include <QTreeWidgetItem>
+#include "qtpropertymanager.h"
+#include "qtvariantproperty.h"
+#include "qttreepropertybrowser.h"
 
 const double beamL = 800;
 
@@ -53,6 +56,7 @@ Q_DECLARE_METATYPE(Force)
 Q_DECLARE_METATYPE(Support)
 Q_DECLARE_METATYPE(Moment)
 Q_DECLARE_METATYPE(DistLoad)
+Q_DECLARE_METATYPE(QTreeWidgetItem*)
 
 namespace Ui {
 class beam;
@@ -78,7 +82,8 @@ private slots:
     void on_action_Save_triggered();
     void componentsActionDelete();
     void on_actionSave_as_triggered();
-
+    void propertyValueChanged(QtProperty *property, const QVariant &value);
+    void on_graphicsview_selectChange();
 private:
     Ui::beam *ui;
     QGraphicsScene *scene;
@@ -86,7 +91,7 @@ private:
     QList<Support> supports;
     QList<DistLoad> distributedloads;
     QList<Moment> moments;
-    QList< QPair<float,float> > resForces;
+    QList< QPair<double,double> > resForces;
     QGraphicsItem *drawSupport(Support s);
     QGraphicsItem *drawSingleForce(Force f);
     QGraphicsItem *drawMoment(Moment m);
@@ -95,11 +100,14 @@ private:
     void addMoment(Moment moment);
     void reDrawCPanel();
     void reDrawScene();
-    void plotDiagrams(QList<QPair<float, float> > points);
+    void plotDiagrams(QList<QPair<double, double> > points);
     double realBeamL;
     double LFactor;
     QGraphicsItem *drawDistLoad(DistLoad dl);
     void addDistLoad(DistLoad dl);
+    QtVariantPropertyManager *variantManager;
+    QtProperty *topItem;
+    QtTreePropertyBrowser *variantEditor;
 };
 
 #endif // BEAM_H

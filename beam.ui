@@ -14,66 +14,69 @@
    <string>Beam Calculator</string>
   </property>
   <widget class="QWidget" name="centralwidget">
-   <layout class="QVBoxLayout" name="verticalLayout">
+   <layout class="QVBoxLayout" name="verticalLayout_2">
     <item>
-     <widget class="QSplitter" name="splitter_2">
+     <widget class="QSplitter" name="splitter_3">
       <property name="orientation">
        <enum>Qt::Horizontal</enum>
       </property>
-      <widget class="QWidget" name="layoutWidget">
-       <layout class="QVBoxLayout" name="verticalLayout_3">
-        <item>
-         <widget class="BeamView" name="graphicsView">
-          <property name="frameShape">
-           <enum>QFrame::StyledPanel</enum>
-          </property>
-          <property name="frameShadow">
-           <enum>QFrame::Sunken</enum>
-          </property>
-          <property name="lineWidth">
-           <number>1</number>
-          </property>
-          <property name="backgroundBrush">
-           <brush brushstyle="Dense2Pattern">
-            <color alpha="255">
-             <red>238</red>
-             <green>238</green>
-             <blue>238</blue>
-            </color>
-           </brush>
-          </property>
-          <property name="interactive">
-           <bool>true</bool>
-          </property>
-          <property name="renderHints">
-           <set>QPainter::Antialiasing|QPainter::HighQualityAntialiasing|QPainter::SmoothPixmapTransform|QPainter::TextAntialiasing</set>
-          </property>
-          <property name="viewportUpdateMode">
-           <enum>QGraphicsView::FullViewportUpdate</enum>
-          </property>
-          <property name="rubberBandSelectionMode">
-           <enum>Qt::IntersectsItemBoundingRect</enum>
-          </property>
-         </widget>
-        </item>
-        <item>
-         <widget class="QPushButton" name="solveBtn">
-          <property name="text">
-           <string>SOLVE</string>
-          </property>
-         </widget>
-        </item>
-        <item>
-         <widget class="QCustomPlot" name="widget" native="true">
-          <property name="minimumSize">
-           <size>
-            <width>100</width>
-            <height>400</height>
-           </size>
-          </property>
-         </widget>
-        </item>
-       </layout>
+      <widget class="QSplitter" name="splitter_2">
+       <property name="orientation">
+        <enum>Qt::Vertical</enum>
+       </property>
+       <widget class="QWidget" name="verticalLayoutWidget">
+        <layout class="QVBoxLayout" name="verticalLayout">
+         <item>
+          <widget class="BeamView" name="graphicsView">
+           <property name="frameShape">
+            <enum>QFrame::StyledPanel</enum>
+           </property>
+           <property name="frameShadow">
+            <enum>QFrame::Sunken</enum>
+           </property>
+           <property name="lineWidth">
+            <number>1</number>
+           </property>
+           <property name="backgroundBrush">
+            <brush brushstyle="Dense2Pattern">
+             <color alpha="255">
+              <red>238</red>
+              <green>238</green>
+              <blue>238</blue>
+             </color>
+            </brush>
+           </property>
+           <property name="interactive">
+            <bool>true</bool>
+           </property>
+           <property name="renderHints">
+            <set>QPainter::Antialiasing|QPainter::HighQualityAntialiasing|QPainter::SmoothPixmapTransform|QPainter::TextAntialiasing</set>
+           </property>
+           <property name="viewportUpdateMode">
+            <enum>QGraphicsView::FullViewportUpdate</enum>
+           </property>
+           <property name="rubberBandSelectionMode">
+            <enum>Qt::IntersectsItemBoundingRect</enum>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QPushButton" name="solveBtn">
+           <property name="text">
+            <string>SOLVE</string>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </widget>
+       <widget class="QCustomPlot" name="widget" native="true">
+        <property name="minimumSize">
+         <size>
+          <width>100</width>
+          <height>400</height>
+         </size>
+        </property>
+       </widget>
       </widget>
       <widget class="QSplitter" name="splitter">
        <property name="orientation">
@@ -98,13 +101,7 @@
          </property>
         </column>
        </widget>
-       <widget class="QTreeWidget" name="treeWidget_2">
-        <column>
-         <property name="text">
-          <string notr="true">1</string>
-         </property>
-        </column>
-       </widget>
+       <widget class="QtTreePropertyBrowser" name="treeView_2"/>
       </widget>
      </widget>
     </item>
@@ -241,12 +238,16 @@
    <header>qcustomplot.h</header>
    <container>1</container>
   </customwidget>
+  <customwidget>
+   <class>QtTreePropertyBrowser</class>
+   <extends>QTreeView</extends>
+   <header>qttreepropertybrowser.h</header>
+  </customwidget>
  </customwidgets>
  <tabstops>
-  <tabstop>graphicsView</tabstop>
   <tabstop>solveBtn</tabstop>
   <tabstop>treeWidget</tabstop>
-  <tabstop>treeWidget_2</tabstop>
+  <tabstop>treeView_2</tabstop>
  </tabstops>
  <resources>
   <include location="resources.qrc"/>

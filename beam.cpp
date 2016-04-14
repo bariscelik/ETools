@@ -85,6 +85,8 @@ double calcIntegral(double a,double b,std::string f,int n)
     return sum;
 }
 
+
+
 beam::beam(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::beam)
@@ -93,6 +95,22 @@ beam::beam(QWidget *parent) :
 
     scene = new QGraphicsScene(this);
     ui->graphicsView->setScene(scene);
+
+    connect(scene, SIGNAL(selectionChanged()), this, SLOT(on_graphicsview_selectChange()));
+
+    variantManager = new QtVariantPropertyManager();
+    connect(variantManager, SIGNAL(valueChanged(QtProperty *, const QVariant &)),
+                this, SLOT(propertyValueChanged(QtProperty *, const QVariant &)));
+
+    QtVariantEditorFactory *variantFactory = new QtVariantEditorFactory();
+    variantEditor = ui->treeView_2;
+    variantEditor->setFactoryForManager(variantManager, variantFactory);
+    variantEditor->setPropertiesWithoutValueMarked(true);
+    variantEditor->setRootIsDecorated(false);
+    variantEditor->setAlternatingRowColors(true);
+
+
+
     QPen blackPen(Qt::black);
     blackPen.setWidth(2);
 
@@ -123,6 +141,22 @@ beam::beam(QWidget *parent) :
 
 }
 
+void beam::on_graphicsview_selectChange()
+{
+    if(scene->selectedItems().count() > 0)
+    {
+        if(!scene->selectedItems().at(0)->data(0).isNull())
+        {
+            ui->treeWidget->clearSelection();
+            scene->selectedItems().at(0)->data(0).value<QTreeWidgetItem*>()->setSelected(true);
+
+            ui->treeWidget->setFocus();
+        }
+    }else{
+        ui->treeWidget->clearSelection();
+    }
+}
+
 beam::~beam()
 {
     delete ui;
@@ -147,6 +181,8 @@ void beam::reDrawCPanel()
         item->setText(0,QString::number(forces.at(i).mag) + " N");
         item->setData(0,Qt::UserRole,QVariant(i));
         allForces->addChild(item);
+        const QVariant var1 = QVariant::fromValue<QTreeWidgetItem*>(item);
+        forces.at(i).item->setData(0,var1);
     }
     allForces->setExpanded(true);
 
@@ -165,6 +201,8 @@ void beam::reDrawCPanel()
         item->setText(0,"Mesnet " + QString::number(i));
         item->setData(0,Qt::UserRole,QVariant(i));
         allSupports->addChild(item);
+        const QVariant var1 = QVariant::fromValue<QTreeWidgetItem*>(item);
+        supports.at(i).item->setData(0,var1);
     }
     allSupports->setExpanded(true);
     // ----- SUPPORTS -----
@@ -183,6 +221,8 @@ void beam::reDrawCPanel()
         item->setText(0,QString::number(distributedloads.at(i).x1) + " - " + QString::number(distributedloads.at(i).x2));
         item->setData(0,Qt::UserRole,QVariant(i));
         allDistLoads->addChild(item);
+        const QVariant var1 = QVariant::fromValue<QTreeWidgetItem*>(item);
+        distributedloads.at(i).item->setData(0,var1);
     }
     allDistLoads->setExpanded(true);
 
@@ -213,6 +253,8 @@ QGraphicsItem *beam::drawSupport(Support s)
 
     QGraphicsItemGroup *group = scene->createItemGroup(supItms);
     group->setFlag(QGraphicsItem::ItemIsSelectable);
+
+    group->update();
 
     reDrawCPanel();
     return group;
@@ -498,7 +540,10 @@ void beam::on_solveBtn_clicked()
 
 void beam::on_treeWidget_currentItemChanged(QTreeWidgetItem *current, QTreeWidgetItem *previous)
 {
+
     scene->clearSelection();
+    variantManager->clear();
+    topItem = variantManager->addProperty(QtVariantPropertyManager::groupTypeId(), tr("Özellikler"));
 
     if(current){
 
@@ -517,6 +562,26 @@ void beam::on_treeWidget_currentItemChanged(QTreeWidgetItem *current, QTreeWidge
                 {
                     Support s = supports.at(pos);
                     s.item->setSelected(true);
+
+                    QtVariantProperty *item = variantManager->addProperty(QVariant::Bool, QLatin1String("Bool Property"));
+                    item->setValue(true);
+                    topItem->addSubProperty(item);
+
+
+                    item = variantManager->addProperty(QVariant::Color, tr("Brush Color"));
+                    item->setValue(qgraphicsitem_cast<QGraphicsPolygonItem*>(s.item->childItems().at(0))->brush());
+                    topItem->addSubProperty(item);
+
+                    item = variantManager->addProperty(QVariant::Color, tr("Pen Color"));
+                    item->setValue(qgraphicsitem_cast<QGraphicsPolygonItem*>(s.item->childItems().at(0))->pen());
+                    topItem->addSubProperty(item);
+
+                    item = variantManager->addProperty(QVariant::String, QLatin1String(" String Property"));
+                    item->setValue("Value");
+                    topItem->addSubProperty(item);
+
+
+                    variantEditor->addProperty(topItem);
                     break;
                 }
                 case 3 :
@@ -534,12 +599,21 @@ void beam::on_treeWidget_currentItemChanged(QTreeWidgetItem *current, QTreeWidge
     }
 }
 
-void beam::plotDiagrams(QList< QPair<float,float> > points)
+void beam::propertyValueChanged(QtProperty *property, const QVariant &value)
+{
+        if (property->propertyName() == "Brush Color") {
+                qgraphicsitem_cast<QGraphicsPolygonItem*>(scene->selectedItems().at(0)->childItems().at(0))->setBrush(QBrush(value.value<QColor>()));
+        }else if (property->propertyName() == "Pen Color") {
+            qgraphicsitem_cast<QGraphicsPolygonItem*>(scene->selectedItems().at(0)->childItems().at(0))->setPen(QPen(value.value<QColor>()));
+        }
+}
+
+void beam::plotDiagrams(QList<QPair<double, double> > points)
 {
     int pointCount = points.count();
     QVector<double> x(pointCount),y(pointCount);
 
-    int totalY=0;
+    double totalY=0;
     for(int i=0;i<pointCount;++i)
     {
 
