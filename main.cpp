@@ -1,9 +1,12 @@
 #include "home.h"
 #include <QApplication>
 #include <QTranslator>
+#include <QSplashScreen>
+#include <QTimer>
 int main(int argc, char *argv[])
 {
     QApplication a(argc, argv);
+    home w;
 
     QTranslator *ts = new QTranslator;
     if(!ts->load(":/files/lang.qm"))
@@ -12,8 +15,17 @@ int main(int argc, char *argv[])
     }else{
         qApp->installTranslator(ts);
     }
-    home w;
-    w.show();
+    QPixmap pixmap(":/files/images/splash.jpg");
+    QSplashScreen splash(pixmap);
+    splash.show();
+
+    a.processEvents(QEventLoop::AllEvents);
+
+    QTimer::singleShot(5000,&splash,SLOT(close()));
+    QTimer::singleShot(5000,&w,SLOT(show()));
+
+    //w.show();
+
 
     return a.exec();
 }

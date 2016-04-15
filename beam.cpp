@@ -117,7 +117,7 @@ beam::beam(QWidget *parent) :
     realBeamL = 2;
     LFactor = beamL / realBeamL;
 
-    QGraphicsRectItem *bar = scene->addRect(0,-15,beamL,15,blackPen,QBrush(QColor("#75BAD1")));
+    QGraphicsRectItem *bar = scene->addRect(0,-15,beamL,15,blackPen,QBrush(QColor("#fff")));
     bar->setFlag(QGraphicsItem::ItemIsSelectable);
     bar->setAcceptHoverEvents(true);
 
@@ -239,14 +239,14 @@ QGraphicsItem *beam::drawSupport(Support s)
     int ypos=0;
     float xpos = LFactor * s.posX;
     QPen blackPen(Qt::black);
-    blackPen.setWidth(3);
+    blackPen.setWidth(2);
 
     QPolygonF Triangle;
     Triangle.append(QPointF(xpos-20.,ypos+40));
     Triangle.append(QPointF(xpos+0.,ypos+0));
     Triangle.append(QPointF(xpos+20.,ypos+40));
-    QGraphicsPolygonItem *tri = scene->addPolygon(Triangle,blackPen,QBrush(QColor("#5DCBF0")));
-    QGraphicsRectItem *rect = scene->addRect(xpos-40,ypos+40,80,10,QPen(),QBrush(QColor("#F0825D")));
+    QGraphicsPolygonItem *tri = scene->addPolygon(Triangle,blackPen,QBrush(Qt::BDiagPattern));
+    QGraphicsRectItem *rect = scene->addRect(xpos-40,ypos+40,80,10,QPen(),QBrush(Qt::Dense3Pattern));
     QList<QGraphicsItem*> supItms;
     supItms.append(tri);
     supItms.append(rect);

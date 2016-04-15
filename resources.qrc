@@ -8,5 +8,6 @@
         <file>images/delete.svg</file>
         <file>images/ok.svg</file>
         <file>images/distload.png</file>
+        <file>images/splash.jpg</file>
     </qresource>
 </RCC>
