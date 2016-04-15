@@ -10,9 +10,11 @@ ETools is written in QT C++ with platform independence. ETools is available on M
 
 To build ETools on Linux, you must have so simple requirements.
 
--- QT
--- muparser [Muparser Github Page](https://github.com/beltoforion/muparser/)
--- a coffee :)
+- QT
+- [Muparser Library](https://github.com/beltoforion/muparser/)
+- a coffee :)
+
+###Build
 
 1. Download [zip](https://github.com/bariscelik/ETools/archive/master.zip) or run in terminal: `git clone https://github.com/bariscelik/ETools.git`
 2. Install muparser library
