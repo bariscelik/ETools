@@ -8,6 +8,7 @@ int main(int argc, char *argv[])
     QApplication a(argc, argv);
     home w;
 
+
     QTranslator *ts = new QTranslator;
     if(!ts->load(":/files/lang.qm"))
     {
@@ -17,12 +18,13 @@ int main(int argc, char *argv[])
     }
     QPixmap pixmap(":/files/images/splash.jpg");
     QSplashScreen splash(pixmap);
+
     splash.show();
 
     a.processEvents(QEventLoop::AllEvents);
 
-    QTimer::singleShot(5000,&splash,SLOT(close()));
-    QTimer::singleShot(5000,&w,SLOT(show()));
+    QTimer::singleShot(2000,&splash,SLOT(close()));
+    QTimer::singleShot(2000,&w,SLOT(show()));
 
     //w.show();
 

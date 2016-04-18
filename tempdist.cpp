@@ -57,6 +57,7 @@ void tempdist::on_graphicsview_selectChange()
             f = new lineForm(lineId,lines.at(lineId).type,lines.at(lineId).h,lines.at(lineId).temp);
             connect(f, SIGNAL(accepted()), this, SLOT(test()));
             f->show();
+            scene->clearSelection();
         }
         /*selected.at(0)->setData(1,QVariant(0));*/  }
 
@@ -79,6 +80,9 @@ void tempdist::test(){
     if(f->id==1) tLineLabel->setPlainText( QString::number(f->temp).append(" C°"));
     if(f->id==2) rLineLabel->setPlainText( QString::number(f->temp).append(" C°"));
     if(f->id==3) bLineLabel->setPlainText( QString::number(f->temp).append(" C°"));
+
+
+
     /*
 
 
@@ -119,6 +123,10 @@ tempdist::tempdist(QWidget *parent) :
     ui->tTop->setValidator(new PointValidator(0,999999,4,this));
     ui->tBottom->setValidator(new PointValidator(0,999999,4,this));
 */
+    QList<int> sizes;
+    sizes << ui->graphicsView->size().width() << ui->tempGraph->size().width();
+    ui->splitter->setSizes(sizes);
+    ui->textEdit->hide();
     this->move(QApplication::desktop()->screen()->rect().center() - this->rect().center());
 
     scene = new QGraphicsScene(this);
@@ -132,13 +140,25 @@ tempdist::tempdist(QWidget *parent) :
 
     Line l;
     l.h = 0;
-    l.type = 1;
+    l.type = 0;
     l.temp = 0;
+    lines.append(l);
 
+    l.h = 0;
+    l.type = 1;
+    l.temp = 50;
     lines.append(l);
+
+    l.h = 400;
+    l.type = 2;
+    l.temp = 500;
     lines.append(l);
+
+    l.h = 0;
+    l.type = 1;
+    l.temp = 80;
     lines.append(l);
-    lines.append(l);
+
 
     QGraphicsLineItem *lLine = scene->addLine(0,0,0,300,blackPen);
     lLine->setFlag(QGraphicsItem::ItemIsSelectable);
@@ -161,16 +181,16 @@ tempdist::tempdist(QWidget *parent) :
     scene->addRect(0,0,500,300,blackPen,QBrush(QColor("#75BAD1")));
 
     QFont tempFont("Helvetica",12,QFont::Bold);
-    lLineLabel= scene->addText("0 C°",tempFont);
+    lLineLabel= scene->addText(QString::number(lines.at(0).temp)+" C°",tempFont);
     lLineLabel->setPos(-45,130);
 
-    rLineLabel= scene->addText("0 C°",tempFont);
+    rLineLabel= scene->addText(QString::number(lines.at(2).temp)+" C°",tempFont);
     rLineLabel->setPos(505,130);
 
-    bLineLabel= scene->addText("0 C°",tempFont);
+    bLineLabel= scene->addText(QString::number(lines.at(3).temp)+" C°",tempFont);
     bLineLabel->setPos(235,300);
 
-    tLineLabel= scene->addText("0 C°",tempFont);
+    tLineLabel= scene->addText(QString::number(lines.at(1).temp)+" C°",tempFont);
     tLineLabel->setPos(235,-30);
 
 }
@@ -429,7 +449,7 @@ void tempdist::solveAll(double tLeft,double tRight,double tTop,double tBottom,do
                  tb=false,
                  tt=false,
                  tl=false;
-            if(j == sizeL-1 ){resValue+=2*ht*tRight/k;tr=true;}
+            if(j == sizeL-1 ){resValue+=2*ht*0.5*tRight/k;tr=true;}
             if(i == sizeH-1 ){resValue+=tBottom;tb=true;}
             if(i == 0 ){resValue+=tTop;tt=true;}
             if(j == 0 ){resValue+=tLeft;tl=true;}
@@ -440,8 +460,10 @@ void tempdist::solveAll(double tLeft,double tRight,double tTop,double tBottom,do
             {
                 if(j==sizeL-1)
                 {
-                    resMatrix[resRow][m[i][j]]=4+2*ht/k;
+                    qDebug("asdsadsadsadsad");
+                    resMatrix[resRow][m[i][j]]=4+2*ht*0.5/k;
                     resMatrix[resRow][m[i][j-1]]=-2;
+                    tr==true;
                 }else{
                     resMatrix[resRow][m[i][j]]=4;
                     tl=true;
@@ -459,25 +481,129 @@ void tempdist::solveAll(double tLeft,double tRight,double tTop,double tBottom,do
         }
     }
 
-    vector<double> x(dof);
-    x = gauss(resMatrix);
+    vector<double> results(dof);
+    results = gauss(resMatrix);
+
+    vector< vector<double> > results_matrix(h,vector<double>(l,0));
+
+    for(int i=0;i<h;i++)
+    {
+        for(int j=0;j<l;j++)
+        {
+            if(i==0){results_matrix[i][j] = tTop;}
+            if(i==h-1){results_matrix[i][j] = tBottom;}
+            if(j==0){results_matrix[i][j] = tLeft;}
+        }
+    }
+
+    for (unsigned i = 0; i < sizeH; ++ i)
+    {
+        for (unsigned j = 0; j < l-1; ++ j)
+        {
+
+            results_matrix[i+1][j+1] = results[sizeL * i + j];
+
+        }
+    }
+
+    printv(results_matrix);
+
+    print(resMatrix);
+
+    ui->tempGraph->clearPlottables();
+    ui->tempGraph->clearGraphs();
+    ui->tempGraph->clearItems();
+
+    ui->tempGraph->setInteractions(QCP::iRangeDrag | QCP::iRangeZoom | QCP::iSelectAxes |
+                                QCP::iSelectLegend | QCP::iSelectPlottables);
+    ui->tempGraph->xAxis->setLabel("x");
+    ui->tempGraph->axisRect()->setupFullAxesBox(true);
+    ui->tempGraph->yAxis->setLabel("y");
+
+
+    QCPColorMap *colorMap = new QCPColorMap(ui->tempGraph->xAxis, ui->tempGraph->yAxis);
+    ui->tempGraph->addPlottable(colorMap);
+    int nx = h;
+    int ny = l;
+    colorMap->data()->setSize(nx, ny);
+    colorMap->data()->setRange(QCPRange(0, nx), QCPRange(0, ny));
+
+
+    double x, y, z;
+    for (int xIndex=0; xIndex<nx; ++xIndex)
+    {
+      for (int yIndex=0; yIndex<ny; ++yIndex)
+      {
+
+        colorMap->data()->cellToCoord(xIndex, yIndex, &x, &y);
+
+        z=results_matrix[xIndex][yIndex];
+        qDebug() << "data" << xIndex << yIndex << x << y << z;
+        colorMap->data()->setCell(xIndex, yIndex, z);
+      }
+    }
+
+
+    QCPColorScale *colorScale = new QCPColorScale(ui->tempGraph);
+    ui->tempGraph->plotLayout()->addElement(0, 1, colorScale);
+
+    //colorScale->setType(QCPAxis::atRight);
+    colorMap->setColorScale(colorScale);
+    colorScale->axis()->setLabel("Sıcaklık");
+
+
+    colorMap->setGradient(QCPColorGradient::gpThermal);
+
+    colorMap->rescaleDataRange();
+
+    QCPMarginGroup *marginGroup = new QCPMarginGroup(ui->tempGraph);
+    ui->tempGraph->axisRect()->setMarginGroup(QCP::msBottom|QCP::msTop, marginGroup);
+    colorScale->setMarginGroup(QCP::msBottom|QCP::msTop, marginGroup);
+
+    ui->tempGraph->rescaleAxes();
+    ui->tempGraph->replot();
+
+    ui->textEdit->show();
+
+    //delete colorScale,colorMap,marginGroup;
+
+    ui->textEdit->show();
 
     QString s;
     s.append("Result:");
        for (unsigned int i=0; i<dof; i++) {
-           s = s + "\n T_" + QString::number(i) + "= "+ QString::number(x[i]) + "C°";
+           s = s + "\n T_" + QString::number(i) + "= "+ QString::number(results[i]) + "C°";
        }
        ui->textEdit->setText(s);
+
+
 }
 
 void tempdist::on_actionSolve_triggered()
 {
+    /*
+    solve(   lines.at(0).temp,
+             lines.at(2).temp,
+             lines.at(1).temp,
+             lines.at(3).temp,
+             ui->height->text().toInt(),
+             ui->width->text().toInt());*/
+
     solveAll(lines.at(0).temp,
              lines.at(2).temp,
-          lines.at(1).temp,
-          lines.at(3).temp,
-          lines.at(2).h,
-          ui->lineEdit->text().toDouble(),
-          ui->height->text().toInt(),
-          ui->width->text().toInt());
+             lines.at(1).temp,
+             lines.at(3).temp,
+             lines.at(2).h,
+             ui->lineEdit->text().toDouble(),
+             ui->height->text().toInt(),
+             ui->width->text().toInt());
+/*
+    solveAll(lines.at(0).temp,
+             lines.at(2).temp,
+             lines.at(1).temp,
+             lines.at(3).temp,
+             lines.at(2).h,
+             ui->lineEdit->text().toDouble(),
+             ui->height->text().toInt(),
+             ui->width->text().toInt());*/
 }

@@ -9,8 +9,7 @@ class PointValidator : public QDoubleValidator
 public:
     PointValidator(double bottom, double top, int decimals, QObject * parent) :
         QDoubleValidator(bottom, top, decimals, parent)
-    {
-    }
+    {}
 
     QValidator::State validate(QString &s, int &i) const
     {
@@ -96,6 +95,7 @@ beam::beam(QWidget *parent) :
     scene = new QGraphicsScene(this);
     ui->graphicsView->setScene(scene);
 
+
     connect(scene, SIGNAL(selectionChanged()), this, SLOT(on_graphicsview_selectChange()));
 
     variantManager = new QtVariantPropertyManager();
@@ -112,7 +112,7 @@ beam::beam(QWidget *parent) :
 
 
     QPen blackPen(Qt::black);
-    blackPen.setWidth(2);
+    blackPen.setWidth(1);
 
     realBeamL = 2;
     LFactor = beamL / realBeamL;
@@ -121,24 +121,26 @@ beam::beam(QWidget *parent) :
     bar->setFlag(QGraphicsItem::ItemIsSelectable);
     bar->setAcceptHoverEvents(true);
 
-
-
     Support s;
 
     s.fx = 0;
     s.fy = 0;
     s.posX = 0;
-    s.type = 2;
+    s.type = Support::NOFREE;
+
+    addSupport(s);
+    s.type = Support::XFREE;
+    s.posX = realBeamL/2;
     addSupport(s);
     s.posX = realBeamL;
     addSupport(s);
-
     reDrawCPanel();
 
     ui->treeWidget->setContextMenuPolicy(Qt::CustomContextMenu);
 
     ui->widget->hide();
-
+    QShortcut *delAct = new QShortcut(QKeySequence::Delete,ui->treeWidget);
+    connect(delAct, SIGNAL(activated()), this, SLOT(componentsActionDelete()));
 }
 
 void beam::on_graphicsview_selectChange()
@@ -240,16 +242,28 @@ QGraphicsItem *beam::drawSupport(Support s)
     float xpos = LFactor * s.posX;
     QPen blackPen(Qt::black);
     blackPen.setWidth(2);
+QList<QGraphicsItem*> supItms;
+
 
     QPolygonF Triangle;
     Triangle.append(QPointF(xpos-20.,ypos+40));
     Triangle.append(QPointF(xpos+0.,ypos+0));
     Triangle.append(QPointF(xpos+20.,ypos+40));
     QGraphicsPolygonItem *tri = scene->addPolygon(Triangle,blackPen,QBrush(Qt::BDiagPattern));
-    QGraphicsRectItem *rect = scene->addRect(xpos-40,ypos+40,80,10,QPen(),QBrush(Qt::Dense3Pattern));
-    QList<QGraphicsItem*> supItms;
-    supItms.append(tri);
+    QGraphicsRectItem *rect;
+    if(s.type == Support::NOFREE)
+    {
+        rect = scene->addRect(xpos-40,ypos+40,80,10,QPen(),QBrush(Qt::Dense3Pattern));
+    }else if(s.type == Support::XFREE)
+    {
+
+        rect = scene->addRect(xpos-40,ypos+50,80,10,QPen(),QBrush(Qt::Dense3Pattern));
+        supItms.append(scene->addEllipse(xpos-15,ypos+40,10,10));
+        supItms.append(scene->addEllipse(xpos+5,ypos+40,10,10));
+    }
+
     supItms.append(rect);
+    supItms.append(tri);
 
     QGraphicsItemGroup *group = scene->createItemGroup(supItms);
     group->setFlag(QGraphicsItem::ItemIsSelectable);
@@ -390,13 +404,13 @@ QGraphicsItem *beam::drawSingleForce(Force force)
 
 QGraphicsItem *beam::drawDistLoad(DistLoad dl)
 {
-    double HFactor = LFactor * 0.5;
+    double HFactor = LFactor * 0.1;
     QPen blackPen(Qt::black);
-    blackPen.setWidth(3);
+    blackPen.setWidth(2);
     double x1pos = LFactor * dl.x1;
 
     QPainterPath path;
-    path.moveTo(x1pos, - 15 -HFactor * mathSolve<double>(dl.f.toStdString(),x1pos));
+    path.moveTo(x1pos, - 15 -HFactor * mathSolve<double>(dl.f.toStdString(),dl.x1));
 
     QList<QGraphicsItem*> arrowItms;
     QList<QGraphicsItem*> allArrowItms;
@@ -410,10 +424,10 @@ QGraphicsItem *beam::drawDistLoad(DistLoad dl)
         path.lineTo(xpos, - 15 - HFactor * y);
 
         QPolygonF Triangle;
-        Triangle.append(QPointF(20,-5));
+        Triangle.append(QPointF(10,-3));
         Triangle.append(QPointF(0,0));
-        Triangle.append(QPointF(20,+5));
-        QLineF line(20,0,HFactor * y - 1,0);
+        Triangle.append(QPointF(10,+3));
+        QLineF line(10,0,HFactor * y - 1,0);
 
 
         arrowItms.append(scene->addLine(line,blackPen));
@@ -452,6 +466,10 @@ void beam::on_solveBtn_clicked()
 {
     resForces.clear();
 
+    //QMessageBox::information(this,"Eksik Veri","Çözüm için yeterli sayıda mesnet yok. Lütfen mesnet ekleyin ve tekrar deneyin.");
+
+    if(supports.size()<2){QMessageBox::warning(this,"Incompleted Data","There are no enough supports to solution.Please add a support and try again!"); return;}
+
     const int fcount = forces.size();
     const int dlcount = distributedloads.size();
 
@@ -477,6 +495,35 @@ void beam::on_solveBtn_clicked()
         resForces.append(res);
 
         totalMoment += -dlArea * res.first;
+
+        // -----------------------------
+
+
+        supports.at(i).posX;
+
+        double s2fy = dlArea * res.first / (supports.at(i+1).posX - supports.at(i).posX);
+        //double s1fy = dlArea-s2fy;
+
+        double qmax = mathSolve<double>(dl.f.toStdString(),dl.x2);
+
+
+        double p = calcIntegral(0.5,dl.x2,dl.f.toStdString().append("*x"),200)/calcIntegral(0.5,dl.x2,dl.f.toStdString(),200);
+        double l = (supports.at(i+1).posX-supports.at(i).posX);
+
+        qDebug() << "P == " << p;
+        qDebug() << "**R == " << (6 / (l * l)) * calcIntegral(0,
+                                     l,
+                                     QString::number(s2fy)
+                                     .append("*(x^2)-")
+                                     .append(QString::number(qmax))
+                                     .append("*(x^2)*")
+                                     .append(QString::number((p-0.5)*dl.x2/0.5))
+                                     .append("*x").toStdString(),200);
+
+        supports.at(i+1).posX;
+
+
+        // -----------------------------
     }
 
 
@@ -527,11 +574,6 @@ void beam::on_solveBtn_clicked()
 
     qSort(resForces.begin(), resForces.end(), sortResForces);
 
-
-
-    qDebug() << "\n" << resForces.at(0).first << resForces.at(1).first << resForces.at(2).first
-              << "\n" << resForces.at(0).second << resForces.at(1).second << resForces.at(2).second;
-
     plotDiagrams(resForces);
     ui->widget->show();
 }
@@ -580,6 +622,13 @@ void beam::on_treeWidget_currentItemChanged(QTreeWidgetItem *current, QTreeWidge
                     item->setValue("Value");
                     topItem->addSubProperty(item);
 
+                    item = variantManager->addProperty(QtVariantPropertyManager::enumTypeId(),
+                                    tr("Support Type"));
+                    QStringList enumNames;
+                    enumNames << "All Free" << "Y Free" << "X Free" << "No Free";
+                    item->setAttribute(QLatin1String("enumNames"), enumNames);
+                    item->setValue(2);
+                    topItem->addSubProperty(item);
 
                     variantEditor->addProperty(topItem);
                     break;
@@ -597,6 +646,9 @@ void beam::on_treeWidget_currentItemChanged(QTreeWidgetItem *current, QTreeWidge
 
         }
     }
+
+
+
 }
 
 void beam::propertyValueChanged(QtProperty *property, const QVariant &value)
@@ -670,6 +722,7 @@ void beam::on_treeWidget_customContextMenuRequested(const QPoint &pos)
             qDebug()<<pos<<nd->data(0,Qt::UserRole);
 
             QAction *delAct = new QAction(QIcon(":/files/images/delete.svg"), tr("&Delete"), this);
+            delAct->setShortcut(QKeySequence::Delete);
             connect(delAct, SIGNAL(triggered()), this, SLOT(componentsActionDelete()));
 
             QMenu menu(this);
@@ -682,43 +735,46 @@ void beam::on_treeWidget_customContextMenuRequested(const QPoint &pos)
 
 void beam::componentsActionDelete()
 {
-    QTreeWidgetItem *selected = ui->treeWidget->selectedItems().at(0);
-    int pos = selected->data(0,Qt::UserRole).value<int>();
 
-        if(selected->parent()){
-            int type = selected->parent()->data(0,Qt::UserRole).value<int>();
-            int pos = selected->data(0,Qt::UserRole).value<int>();
-            switch(type)
-            {
-                case 1 :
-                {
-                    Force f = forces.at(pos);
-                    scene->removeItem(f.item);
-                    forces.removeAt(pos);
-                    break;
-                }
-                case 2 :
-                {
-                    Support s = supports.at(pos);
-                    scene->removeItem(s.item);
-                    supports.removeAt(pos);
-                    break;
-                }
-                case 3 :
-                {
-                    DistLoad dl = distributedloads.at(pos);
-                    scene->removeItem(dl.item);
-                    distributedloads.removeAt(pos);
-                    break;
-                }
-            default:
+    if(ui->treeWidget->selectedItems().count() > 0){
 
-            break;
+        QTreeWidgetItem *selected = ui->treeWidget->selectedItems().at(0);
+
+            if(selected->parent()){
+                int type = selected->parent()->data(0,Qt::UserRole).value<int>();
+                int pos = selected->data(0,Qt::UserRole).value<int>();
+                switch(type)
+                {
+                    case 1 :
+                    {
+                        Force f = forces.at(pos);
+                        scene->removeItem(f.item);
+                        forces.removeAt(pos);
+                        break;
+                    }
+                    case 2 :
+                    {
+                        Support s = supports.at(pos);
+                        scene->removeItem(s.item);
+                        supports.removeAt(pos);
+                        break;
+                    }
+                    case 3 :
+                    {
+                        DistLoad dl = distributedloads.at(pos);
+                        scene->removeItem(dl.item);
+                        distributedloads.removeAt(pos);
+                        break;
+                    }
+                default:
+
+                break;
+                }
+
             }
 
-        }
-
-    reDrawCPanel();
+        reDrawCPanel();
+    }
 }
 
 void beam::on_actionForce_triggered()
@@ -848,8 +904,7 @@ void beam::on_actionSave_as_triggered()
         QSvgGenerator svgGen;
 
         svgGen.setFileName(fileName);
-        svgGen.setSize(ui->graphicsView->size());
-        svgGen.setViewBox(scene->sceneRect());
+        svgGen.setSize(scene->sceneRect().size().toSize());
 
         QPainter painter( &svgGen );
         scene->render( &painter );
@@ -858,4 +913,9 @@ void beam::on_actionSave_as_triggered()
         pixMap.save(fileName);
 
     }
+}
+
+void beam::on_actionExit_triggered()
+{
+    this->hide();
 }

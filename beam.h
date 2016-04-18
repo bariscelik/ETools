@@ -36,7 +36,11 @@ struct Force : Component{
 
 struct Support : Component{
   float posX;
-  int type;
+  enum t {NOFREE = 3,
+          XFREE = 2,
+          YFREE = 1,
+          ALLFREE = 0};
+  t type;
   float fx;
   float fy;
 };
@@ -84,6 +88,8 @@ private slots:
     void on_actionSave_as_triggered();
     void propertyValueChanged(QtProperty *property, const QVariant &value);
     void on_graphicsview_selectChange();
+    void on_actionExit_triggered();
+
 private:
     Ui::beam *ui;
     QGraphicsScene *scene;

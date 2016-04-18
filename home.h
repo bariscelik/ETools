@@ -22,6 +22,8 @@ private slots:
     void on_commandLinkButton_6_clicked();
     void on_commandLinkButton_clicked();
 
+    void on_actionAbout_triggered();
+
 private:
     Ui::home *ui;
     beam beamSolver;

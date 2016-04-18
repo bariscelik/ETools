@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>638</width>
+    <width>666</width>
     <height>177</height>
    </rect>
   </property>
@@ -41,7 +41,7 @@
          <enum>QTabWidget::Rounded</enum>
         </property>
         <property name="currentIndex">
-         <number>0</number>
+         <number>1</number>
         </property>
         <property name="elideMode">
          <enum>Qt::ElideNone</enum>
@@ -64,9 +64,6 @@
              <widget class="QCommandLinkButton" name="commandLinkButton_4">
               <property name="text">
                <string>Thin Walled Vessels</string>
-              </property>
-              <property name="autoRepeat">
-               <bool>false</bool>
               </property>
              </widget>
             </item>
@@ -102,45 +99,44 @@
          <layout class="QGridLayout" name="gridLayout_5">
           <item row="0" column="0">
            <layout class="QGridLayout" name="gridLayout_2">
-            <item row="0" column="0">
-             <widget class="QCommandLinkButton" name="commandLinkButton">
-              <property name="text">
-               <string>Temprature Distribution</string>
-              </property>
-             </widget>
-            </item>
-            <item row="0" column="1">
+            <item row="0" column="1" alignment="Qt::AlignHCenter|Qt::AlignVCenter">
              <widget class="QCommandLinkButton" name="commandLinkButton_5">
               <property name="text">
                <string>CommandLinkButton</string>
               </property>
              </widget>
             </item>
-            <item row="1" column="0">
-             <widget class="QCommandLinkButton" name="commandLinkButton_2">
+            <item row="1" column="2" alignment="Qt::AlignHCenter|Qt::AlignVCenter">
+             <widget class="QCommandLinkButton" name="commandLinkButton_11">
               <property name="text">
                <string>CommandLinkButton</string>
               </property>
              </widget>
             </item>
-            <item row="0" column="2">
-             <widget class="QCommandLinkButton" name="commandLinkButton_9">
-              <property name="text">
-               <string>CommandLinkButton</string>
-              </property>
-             </widget>
-            </item>
-            <item row="1" column="1">
+            <item row="1" column="1" alignment="Qt::AlignHCenter|Qt::AlignVCenter">
              <widget class="QCommandLinkButton" name="commandLinkButton_10">
               <property name="text">
                <string>CommandLinkButton</string>
               </property>
              </widget>
             </item>
-            <item row="1" column="2">
-             <widget class="QCommandLinkButton" name="commandLinkButton_11">
+            <item row="1" column="0" alignment="Qt::AlignHCenter|Qt::AlignVCenter">
+             <widget class="QCommandLinkButton" name="commandLinkButton_2">
               <property name="text">
-               <string>CommandLinkButton</string>
+               <string>CommandLinkButton              </string>
+              </property>
+             </widget>
+            </item>
+            <item row="0" column="0" alignment="Qt::AlignHCenter|Qt::AlignVCenter">
+             <widget class="QCommandLinkButton" name="commandLinkButton">
+              <property name="text">
+               <string>Temperature Distribution</string>
+              </property>
+              <property name="iconSize">
+               <size>
+                <width>40</width>
+                <height>50</height>
+               </size>
               </property>
              </widget>
             </item>
@@ -159,7 +155,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>638</width>
+     <width>666</width>
      <height>25</height>
     </rect>
    </property>
@@ -168,12 +164,18 @@
      <string>About</string>
     </property>
     <addaction name="actionYard_m"/>
+    <addaction name="actionAbout"/>
    </widget>
    <addaction name="menuDosya"/>
   </widget>
   <action name="actionYard_m">
    <property name="text">
     <string>Help</string>
+   </property>
+  </action>
+  <action name="actionAbout">
+   <property name="text">
+    <string>About</string>
    </property>
   </action>
  </widget>
