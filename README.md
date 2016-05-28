@@ -12,12 +12,13 @@ To build ETools on Linux, you must have so simple requirements.
 
 - QT
 - [Muparser Library](https://github.com/beltoforion/muparser/)
+- [Armadillo Library](http://arma.sourceforge.net/)
 - a coffee :)
 
 ###Build
 
 1. Download [zip](https://github.com/bariscelik/ETools/archive/master.zip) or run in terminal: `git clone https://github.com/bariscelik/ETools.git`
-2. Install muparser library
+2. Install muparser and armadillo library
 3. Open **ETools.pro**
 4. Finally, press run button or `Ctrl + R` and drink coffee
 
