@@ -18,12 +18,22 @@
     <item>
      <layout class="QHBoxLayout" name="horizontalLayout">
       <item>
-       <widget class="QLineEdit" name="lineEdit">
+       <widget class="QLineEdit" name="kvalue">
         <property name="text">
          <string/>
         </property>
         <property name="placeholderText">
          <string>k</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QLineEdit" name="epsilon">
+        <property name="text">
+         <string/>
+        </property>
+        <property name="placeholderText">
+         <string>Epsilon</string>
         </property>
        </widget>
       </item>
@@ -117,6 +127,7 @@
     <bool>false</bool>
    </attribute>
    <addaction name="actionSolve"/>
+   <addaction name="actionDisplay_Mesh_on_off"/>
   </widget>
   <action name="actionSolve">
    <property name="icon">
@@ -128,6 +139,18 @@
    </property>
    <property name="shortcut">
     <string>Ctrl+R</string>
+   </property>
+  </action>
+  <action name="actionDisplay_Mesh_on_off">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="resources.qrc">
+     <normaloff>:/files/images/mesh.png</normaloff>:/files/images/mesh.png</iconset>
+   </property>
+   <property name="text">
+    <string>Display Mesh(on/off)</string>
    </property>
   </action>
  </widget>

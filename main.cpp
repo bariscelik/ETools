@@ -6,7 +6,7 @@
 int main(int argc, char *argv[])
 {
     QApplication a(argc, argv);
-    home w;
+
 
 
     QTranslator *ts = new QTranslator;
@@ -14,8 +14,11 @@ int main(int argc, char *argv[])
     {
         delete ts;
     }else{
-        qApp->installTranslator(ts);
+        a.installTranslator(ts);
     }
+
+    home w;
+
     QPixmap pixmap(":/files/images/splash.jpg");
     QSplashScreen splash(pixmap);
 
@@ -23,11 +26,8 @@ int main(int argc, char *argv[])
 
     a.processEvents(QEventLoop::AllEvents);
 
-    QTimer::singleShot(2000,&splash,SLOT(close()));
-    QTimer::singleShot(2000,&w,SLOT(show()));
-
-    //w.show();
-
+    QTimer::singleShot(1000,&splash,SLOT(close()));
+    QTimer::singleShot(1000,&w,SLOT(show()));
 
     return a.exec();
 }

@@ -52,11 +52,21 @@
            <property name="renderHints">
             <set>QPainter::Antialiasing|QPainter::HighQualityAntialiasing|QPainter::SmoothPixmapTransform|QPainter::TextAntialiasing</set>
            </property>
+           <property name="dragMode">
+            <enum>QGraphicsView::ScrollHandDrag</enum>
+           </property>
            <property name="viewportUpdateMode">
             <enum>QGraphicsView::FullViewportUpdate</enum>
            </property>
            <property name="rubberBandSelectionMode">
             <enum>Qt::IntersectsItemBoundingRect</enum>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QGraphicsView" name="profileView">
+           <property name="interactive">
+            <bool>false</bool>
            </property>
           </widget>
          </item>
@@ -152,6 +162,13 @@
    <addaction name="actionMoment"/>
    <addaction name="actionDistributed_Load"/>
    <addaction name="actionSupport"/>
+   <addaction name="actionMaterial_Properties"/>
+   <addaction name="separator"/>
+   <addaction name="actionShowElasticCurve"/>
+   <addaction name="actionShow_Reactions"/>
+   <addaction name="actionShowMomentDiagram"/>
+   <addaction name="actionShowShearDiagram"/>
+   <addaction name="actionShowSlopeDiagram"/>
   </widget>
   <action name="actionForce">
    <property name="icon">
@@ -223,6 +240,82 @@
    </property>
    <property name="text">
     <string>Exit</string>
+   </property>
+  </action>
+  <action name="actionMaterial_Properties">
+   <property name="icon">
+    <iconset resource="resources.qrc">
+     <normaloff>:/files/images/material_properties.svg</normaloff>:/files/images/material_properties.svg</iconset>
+   </property>
+   <property name="text">
+    <string>Material Properties</string>
+   </property>
+   <property name="toolTip">
+    <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Material Properties&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+   </property>
+  </action>
+  <action name="actionShowElasticCurve">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>EE</string>
+   </property>
+   <property name="toolTip">
+    <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Shows/hides elastic curve&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+   </property>
+  </action>
+  <action name="actionShow_Reactions">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>R</string>
+   </property>
+  </action>
+  <action name="actionShowMomentDiagram">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>MD</string>
+   </property>
+   <property name="toolTip">
+    <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Shows/hides moment diagram&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+   </property>
+  </action>
+  <action name="actionShowShearDiagram">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>SFD</string>
+   </property>
+   <property name="toolTip">
+    <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Shows/hides shear force diagram&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+   </property>
+  </action>
+  <action name="actionShowSlopeDiagram">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>SD</string>
    </property>
   </action>
  </widget>

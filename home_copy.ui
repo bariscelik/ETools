@@ -1,0 +1,193 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>home</class>
+ <widget class="QMainWindow" name="home">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>666</width>
+    <height>177</height>
+   </rect>
+  </property>
+  <property name="sizePolicy">
+   <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+    <horstretch>0</horstretch>
+    <verstretch>0</verstretch>
+   </sizepolicy>
+  </property>
+  <property name="windowTitle">
+   <string>Engineering Tools</string>
+  </property>
+  <widget class="QWidget" name="centralWidget">
+   <property name="sizePolicy">
+    <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+     <horstretch>0</horstretch>
+     <verstretch>0</verstretch>
+    </sizepolicy>
+   </property>
+   <property name="maximumSize">
+    <size>
+     <width>16777215</width>
+     <height>16777215</height>
+    </size>
+   </property>
+   <layout class="QGridLayout" name="gridLayout">
+    <item row="0" column="0">
+     <layout class="QVBoxLayout" name="verticalLayout_2">
+      <item>
+       <widget class="QTabWidget" name="tabWidget">
+        <property name="tabShape">
+         <enum>QTabWidget::Rounded</enum>
+        </property>
+        <property name="currentIndex">
+         <number>1</number>
+        </property>
+        <property name="elideMode">
+         <enum>Qt::ElideNone</enum>
+        </property>
+        <widget class="QWidget" name="tab">
+         <attribute name="title">
+          <string>Mechanical &amp;&amp; Structural</string>
+         </attribute>
+         <layout class="QGridLayout" name="gridLayout_4">
+          <item row="0" column="0">
+           <layout class="QGridLayout" name="gridLayout_3">
+            <item row="0" column="0" alignment="Qt::AlignVCenter">
+             <widget class="QCommandLinkButton" name="commandLinkButton_3">
+              <property name="text">
+               <string>Torsion</string>
+              </property>
+             </widget>
+            </item>
+            <item row="0" column="1" alignment="Qt::AlignVCenter">
+             <widget class="QCommandLinkButton" name="commandLinkButton_4">
+              <property name="text">
+               <string>Thin Walled Vessels</string>
+              </property>
+             </widget>
+            </item>
+            <item row="1" column="0" alignment="Qt::AlignVCenter">
+             <widget class="QCommandLinkButton" name="commandLinkButton_6">
+              <property name="text">
+               <string>Beams</string>
+              </property>
+             </widget>
+            </item>
+            <item row="1" column="1" alignment="Qt::AlignVCenter">
+             <widget class="QCommandLinkButton" name="commandLinkButton_7">
+              <property name="text">
+               <string>Trusses</string>
+              </property>
+             </widget>
+            </item>
+            <item row="1" column="2" alignment="Qt::AlignVCenter">
+             <widget class="QCommandLinkButton" name="commandLinkButton_8">
+              <property name="text">
+               <string>Mohr's Circle</string>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </item>
+         </layout>
+        </widget>
+        <widget class="QWidget" name="tab_2">
+         <attribute name="title">
+          <string>Heat Transfer &amp;&amp; Fluid Mechanics</string>
+         </attribute>
+         <layout class="QGridLayout" name="gridLayout_5">
+          <item row="0" column="0">
+           <layout class="QGridLayout" name="gridLayout_2">
+            <item row="0" column="1" alignment="Qt::AlignHCenter|Qt::AlignVCenter">
+             <widget class="QCommandLinkButton" name="commandLinkButton_5">
+              <property name="text">
+               <string>CommandLinkButton</string>
+              </property>
+             </widget>
+            </item>
+            <item row="1" column="2" alignment="Qt::AlignHCenter|Qt::AlignVCenter">
+             <widget class="QCommandLinkButton" name="commandLinkButton_11">
+              <property name="text">
+               <string>CommandLinkButton</string>
+              </property>
+             </widget>
+            </item>
+            <item row="1" column="1" alignment="Qt::AlignHCenter|Qt::AlignVCenter">
+             <widget class="QCommandLinkButton" name="commandLinkButton_10">
+              <property name="text">
+               <string>CommandLinkButton</string>
+              </property>
+             </widget>
+            </item>
+            <item row="1" column="0" alignment="Qt::AlignHCenter|Qt::AlignVCenter">
+             <widget class="QCommandLinkButton" name="commandLinkButton_2">
+              <property name="text">
+               <string>CommandLinkButton              </string>
+              </property>
+             </widget>
+            </item>
+            <item row="0" column="0" alignment="Qt::AlignHCenter|Qt::AlignVCenter">
+             <widget class="QCommandLinkButton" name="commandLinkButton">
+              <property name="text">
+               <string>Temperature Distribution</string>
+              </property>
+              <property name="iconSize">
+               <size>
+                <width>40</width>
+                <height>50</height>
+               </size>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </item>
+         </layout>
+        </widget>
+       </widget>
+      </item>
+     </layout>
+    </item>
+   </layout>
+  </widget>
+  <widget class="QMenuBar" name="menuBar">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>0</y>
+     <width>666</width>
+     <height>25</height>
+    </rect>
+   </property>
+   <widget class="QMenu" name="menuDosya">
+    <property name="title">
+     <string>About</string>
+    </property>
+    <addaction name="actionYard_m"/>
+    <addaction name="actionAbout"/>
+   </widget>
+   <addaction name="menuDosya"/>
+  </widget>
+  <action name="actionYard_m">
+   <property name="text">
+    <string>Help</string>
+   </property>
+  </action>
+  <action name="actionAbout">
+   <property name="text">
+    <string>About</string>
+   </property>
+  </action>
+ </widget>
+ <layoutdefault spacing="6" margin="11"/>
+ <tabstops>
+  <tabstop>tabWidget</tabstop>
+  <tabstop>commandLinkButton_6</tabstop>
+  <tabstop>commandLinkButton_7</tabstop>
+  <tabstop>commandLinkButton_8</tabstop>
+  <tabstop>commandLinkButton_3</tabstop>
+  <tabstop>commandLinkButton_4</tabstop>
+ </tabstops>
+ <resources/>
+ <connections/>
+</ui>

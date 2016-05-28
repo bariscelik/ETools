@@ -1,12 +1,20 @@
 #include "beam.h"
 #include "ui_beam.h"
-#include <QtMath>
 #include <QSvgGenerator>
 #include <muParser.h>
 
 class PointValidator : public QDoubleValidator
 {
 public:
+
+    /**
+     * @brief Point validator with '.' decimalpoint and bottom to top
+     *
+     * @param bottom - lower value
+     * @param top - upper value
+     * @param decimals - number of digits after point
+     * @param parent - parent object
+     */
     PointValidator(double bottom, double top, int decimals, QObject * parent) :
         QDoubleValidator(bottom, top, decimals, parent)
     {}
@@ -38,8 +46,6 @@ public:
         }
     }
 };
-
-
 
 template <typename T>
 double mathSolve(std::string exp,T xval)
@@ -84,66 +90,51 @@ double calcIntegral(double a,double b,std::string f,int n)
     return sum;
 }
 
-
-
-beam::beam(QWidget *parent) :
-    QMainWindow(parent),
-    ui(new Ui::beam)
+// find next support
+int beam::findSupportInterval(double posX)
 {
-    ui->setupUi(this);
+    int scount = supports.size();
 
-    scene = new QGraphicsScene(this);
-    ui->graphicsView->setScene(scene);
+    for(unsigned int i=0;i<scount;i++)
+    {
+        if(posX<supports[i].posX)
+        {
+            return i;
+        }
+    }
 
-
-    connect(scene, SIGNAL(selectionChanged()), this, SLOT(on_graphicsview_selectChange()));
-
-    variantManager = new QtVariantPropertyManager();
-    connect(variantManager, SIGNAL(valueChanged(QtProperty *, const QVariant &)),
-                this, SLOT(propertyValueChanged(QtProperty *, const QVariant &)));
-
-    QtVariantEditorFactory *variantFactory = new QtVariantEditorFactory();
-    variantEditor = ui->treeView_2;
-    variantEditor->setFactoryForManager(variantManager, variantFactory);
-    variantEditor->setPropertiesWithoutValueMarked(true);
-    variantEditor->setRootIsDecorated(false);
-    variantEditor->setAlternatingRowColors(true);
-
-
-
-    QPen blackPen(Qt::black);
-    blackPen.setWidth(1);
-
-    realBeamL = 2;
-    LFactor = beamL / realBeamL;
-
-    QGraphicsRectItem *bar = scene->addRect(0,-15,beamL,15,blackPen,QBrush(QColor("#fff")));
-    bar->setFlag(QGraphicsItem::ItemIsSelectable);
-    bar->setAcceptHoverEvents(true);
-
-    Support s;
-
-    s.fx = 0;
-    s.fy = 0;
-    s.posX = 0;
-    s.type = Support::NOFREE;
-
-    addSupport(s);
-    s.type = Support::XFREE;
-    s.posX = realBeamL/2;
-    addSupport(s);
-    s.posX = realBeamL;
-    addSupport(s);
-    reDrawCPanel();
-
-    ui->treeWidget->setContextMenuPolicy(Qt::CustomContextMenu);
-
-    ui->widget->hide();
-    QShortcut *delAct = new QShortcut(QKeySequence::Delete,ui->treeWidget);
-    connect(delAct, SIGNAL(activated()), this, SLOT(componentsActionDelete()));
+    return 0;
 }
 
-void beam::on_graphicsview_selectChange()
+Material beam::calculateSectionProperties(Material m)
+{
+
+    // TODO: T & L profile calculation
+    switch(m.profile.type)
+    {
+        case Profile::T:
+            m.Ixx = m.profile.dims[0][0];
+            m.Iyy = 123;
+            m.A = m.profile.dims[2][0] * (m.profile.dims[0][0] + m.profile.dims[1][0] - m.profile.dims[2][0] );
+        break;
+        case Profile::I:
+            m.Ixx = std::pow(m.profile.dims[2][0],3)*(m.profile.dims[0][0] + 2*(m.profile.dims[1][0]-m.profile.dims[2][0]))/3; // t^3 (2b + h_iç ) / 3 => t^3 (2b + l -2t ) / 3 => t^3 (l+2(b-t)) / 3
+            m.Iyy = 123;
+            m.A = m.profile.dims[2][0]*(m.profile.dims[0][0] + 2*(m.profile.dims[1][0]-m.profile.dims[2][0])); // t(l-2t+2b) => t(l+2(b-t))
+            printv(m.profile.dims);
+        break;
+        case Profile::L:
+
+        break;
+    default:
+
+        break;
+    }
+
+    return m;
+}
+
+void beam::grsel()
 {
     if(scene->selectedItems().count() > 0)
     {
@@ -159,9 +150,318 @@ void beam::on_graphicsview_selectChange()
     }
 }
 
+beam::beam(QWidget *parent) :
+    QMainWindow(parent),
+    ui(new Ui::beam)
+{
+    ui->setupUi(this);
+
+    scene = new QGraphicsScene(this);
+    ui->graphicsView->setScene(scene);
+
+    connect(scene, SIGNAL(selectionChanged()), this, SLOT(grsel()));
+
+    variantManager = new QtVariantPropertyManager();
+    connect(variantManager, SIGNAL(valueChanged(QtProperty *, const QVariant &)),
+                this, SLOT(propertyValueChanged(QtProperty *, const QVariant &)));
+
+    QtVariantEditorFactory *variantFactory = new QtVariantEditorFactory();
+    variantEditor = ui->treeView_2;
+    variantEditor->setFactoryForManager(variantManager, variantFactory);
+    variantEditor->setPropertiesWithoutValueMarked(true);
+    variantEditor->setRootIsDecorated(false);
+    variantEditor->setAlternatingRowColors(true);
+
+    // beam length
+    realBeamL = 10;
+
+    // length display factor
+    LFactor = beamL / realBeamL;
+
+
+    QPen blackPen(Qt::black);
+    blackPen.setWidth(1);
+
+
+
+    QGraphicsRectItem *bar = scene->addRect(0,-15,beamL,15,blackPen,QBrush(QColor("#fff")));
+    bar->setFlag(QGraphicsItem::ItemIsSelectable);
+
+
+    Support s;
+
+    //s.fx = 0;
+    s.posX = 0;
+    s.type = Support::FIXED;
+    addSupport(s);
+    s.type = Support::ROLLER;
+
+    s.posX = realBeamL;
+    addSupport(s);
+    reDrawCPanel();
+
+    ui->treeWidget->setContextMenuPolicy(Qt::CustomContextMenu);
+
+    ui->widget->hide();
+    QShortcut *delAct = new QShortcut(QKeySequence::Delete,ui->treeWidget);
+    connect(delAct, SIGNAL(activated()), this, SLOT(componentsActionDelete()));
+
+
+
+
+
+
+
+
+    Profile p;
+    p.dims = { {10,-10,120}, // l
+               {5,154,285}, // b
+               {6,325,34} }; // t
+    p.image = QPixmap(":/files/images/profiles/profile_full_i.png");
+    p.image_section = QPixmap(":/files/images/profiles/profile_i.png");
+    p.type = Profile::I;
+    profiles.append(p);
+
+    p.dims = { {10,172,-15}, // b
+               {50,-20,160}, // l
+               {40,365,50} }; // t
+    p.image = QPixmap(":/files/images/profiles/profile_full_t.png");
+
+    p.image_section = QPixmap(":/files/images/profiles/profile_t.png");
+    p.type = Profile::T;
+    profiles.append(p);
+
+    p.dims = { {10,6,166}, // l
+               {5,70,10}}; // t
+    p.image = QPixmap(":/files/images/profiles/profile_full_l.png");
+    p.image_section = QPixmap(":/files/images/profiles/profile_l.png");
+    p.type = Profile::L;
+    profiles.append(p);
+
+    materialprops = new QDialog(this);
+
+    matui.setupUi(materialprops);
+
+    activeMaterial.profile = profiles.at(0);
+
+    matui.buttonBox->button(QDialogButtonBox::Ok)->setText(tr("Ok"));
+    matui.buttonBox->button(QDialogButtonBox::Cancel)->setText(tr("Cancel"));
+
+
+    Material m;
+    m.name = tr("Carbon-fiber-reinforced polymer");
+    m.E = 40;
+    m.PR = 0.310;
+    materials.append(m);
+    m.name = tr("Titanium");
+    m.E = 110.3;
+    m.PR = 0.32;
+    materials.append(m);
+    m.name = tr("Aluminum");
+    m.E = 69;
+    m.PR = 0.335;
+    materials.append(m);
+    m.name = tr("Brass");
+    m.E = 112.5;
+    m.PR = 0.331;
+    materials.append(m);
+    m.name = tr("Steel (ASTM-A36)");
+    m.E = 200;
+    m.PR = 0.303;
+    materials.append(m);
+    m.name = tr("Graphen");
+    m.E = 1050;
+    m.PR = 0.17;
+    materials.append(m);
+
+    int mCount = materials.count();
+
+    for(int i=0;i < mCount; i++)
+    {
+        matui.materialsComboBox->addItem(materials[i].name);
+    }
+
+    matui.materialsComboBox->addItem(tr("Custom"));
+    matui.materialsComboBox->setCurrentIndex(mCount);
+
+    bg = new QButtonGroup(materialprops);
+    unsigned int psize = profiles.size();
+    for(unsigned int i=0;i<psize;i++)
+    {
+        QPushButton *pb = new QPushButton(materialprops);
+        pb->setIcon(QIcon(profiles.at(i).image));
+        pb->setIconSize(QSize(110,60));
+        pb->setCheckable(true);
+        pb->setProperty("p", i);
+
+        matui.horizontalLayout->addWidget(pb);
+        bg->addButton(pb);
+    }
+
+
+    bg->setExclusive(true);
+
+    QList<QLineEdit*> *lineEditGroup = new QList<QLineEdit*>();
+
+    QGraphicsScene *sc = new QGraphicsScene(materialprops);
+
+    connect(bg, static_cast<void(QButtonGroup::*)(QAbstractButton *, bool)>(&QButtonGroup::buttonToggled),
+        [=](QAbstractButton *button, bool checked){
+
+        if(checked){
+            matui.elasticity->setText(QString::number(currentMaterial.E));
+
+            int i = button->property("p").value<int>();
+
+            Profile p = profiles.at(i);
+            currentMaterial.profile = p;
+
+            if(first)
+            {
+                currentMaterial = activeMaterial;
+                first = false;
+            }
+
+
+            matui.graphicsView->setScene(sc);
+            sc->clear();
+            qDebug() << sc->addPixmap(currentMaterial.profile.image_section)->boundingRect();
+
+            lineEditGroup->clear();
+
+            unsigned int dsize = currentMaterial.profile.dims.size();
+            for(unsigned int k=0;k<dsize;k++)
+            {
+                QLineEdit *edit = new QLineEdit(QString::number(currentMaterial.profile.dims[k][0]));
+                edit->setValidator(new PointValidator(0,999999999,4,this));
+                edit->setFixedWidth(30);
+                QGraphicsWidget *ed = sc->addWidget(edit);
+                ed->setPos(currentMaterial.profile.dims[k][1],currentMaterial.profile.dims[k][2]);
+                lineEditGroup->append(edit);
+                connect(edit,&QLineEdit::textChanged,[=](QString s){
+
+                    unsigned int dimssize=currentMaterial.profile.dims.size();
+
+                    for(unsigned int i=0;i<dimssize;i++)
+                        currentMaterial.profile.dims[i][0] = lineEditGroup->at(i)->text().toDouble();
+
+
+                    currentMaterial = calculateSectionProperties(currentMaterial);
+
+                    matui.resultsLabel->setText(QString("<strong>Area</strong> = %1 m<sup>2</sup><br>"
+                                                        "<strong>I<sub>xx</sub></strong> = %2 m<sup>4</sup><br>"
+                                                        "<strong>I<sub>yy</sub></strong> = %3 m<sup>4</sup>")
+                                                            .arg(QString::number(currentMaterial.A))
+                                                            .arg(QString::number(currentMaterial.Ixx))
+                                                            .arg(QString::number(currentMaterial.Iyy)));
+                });
+            }
+            emit lineEditGroup->at(0)->textChanged(QString());
+        }
+
+
+    });
+
+    connect(matui.materialsComboBox,static_cast<void (QComboBox::*)(int)>(&QComboBox::currentIndexChanged),[=](int index){
+
+        matui.elasticity->setDisabled(true);
+        matui.poissonRatio->setDisabled(true);
+
+        if(index == mCount)
+        {
+            matui.elasticity->setDisabled(false);
+            matui.poissonRatio->setDisabled(false);
+        }else{
+            matui.elasticity->setText(QString::number(materials[index].E));
+            matui.poissonRatio->setText(QString::number(materials[index].PR));
+        }
+
+
+    });
+
+    connect(matui.elasticity,&QLineEdit::textChanged,[=](QString s){
+        currentMaterial.E = s.toDouble();
+    });
+
+    connect(matui.poissonRatio,&QLineEdit::textChanged,[=](QString s){
+        currentMaterial.PR = s.toDouble();
+    });
+
+   connect(matui.buttonBox,&QDialogButtonBox::accepted,
+   [=](){
+        activeMaterial = currentMaterial;
+        materialprops->accept();
+        printv(activeMaterial.profile.dims);
+        currentMaterialTab = bg->checkedButton()->property("p").toInt();
+        redrawProfile();
+   });
+
+   connect(matui.buttonBox,&QDialogButtonBox::rejected,
+   [=](){
+          if (QMessageBox::question( this, "ETools",
+                                     tr("All data will lost. Are you sure?\n"),
+                                     QMessageBox::No |
+                                     QMessageBox::Yes, QMessageBox::Yes) == QMessageBox::Yes)
+          {
+              materialprops->reject();
+          }
+   });
+   redrawProfile();
+
+   QSlider *slider = new QSlider(Qt::Horizontal, this);
+   slider->setFixedWidth(200);
+   slider->setTickInterval(10);
+   slider->setMaximum(50000);
+   slider->setMinimum(0);
+
+   connect(slider, SIGNAL(valueChanged(int)), this, SLOT(scaleChanged(int)));
+   ui->toolBar->addWidget(slider);
+}
+
 beam::~beam()
 {
     delete ui;
+}
+
+void beam::scaleChanged(int sf)
+{
+    scaleFactor = sf;
+    drawElasticCurve(disp_u,disp_nodes);
+    drawSlopeDiagram(disp_u,disp_nodes);
+}
+
+void beam::redrawComponents()
+{
+    int supcount = supports.size();
+    int fcount = forces.size();
+    int dlcount = distributedloads.size();
+
+    for(int i=0;i<supcount;i++){ delete supports[i].item;supports[i].item = drawSupport(supports[i]); }
+    for(int i=0;i<fcount;i++){ delete forces[i].item;forces[i].item = drawSingleForce(forces[i]); }
+    for(int i=0;i<dlcount;i++){ delete distributedloads[i].item;distributedloads[i].item = drawDistLoad(distributedloads[i]); }
+
+}
+
+void beam::redrawProfile()
+{
+    QGraphicsScene *profileScene = new QGraphicsScene(this);
+    profileScene->clear();
+    ui->profileView->setParent(ui->graphicsView);
+    ui->profileView->setScene(profileScene);
+
+    QGraphicsPixmapItem *pix = profileScene->addPixmap(activeMaterial.profile.image_section);
+    unsigned int dsize = activeMaterial.profile.dims.size();
+    for(unsigned int i=0;i<dsize;i++)
+    {
+        profileScene->addText(QString::number(activeMaterial.profile.dims[i][0]))->setPos(activeMaterial.profile.dims[i][1],activeMaterial.profile.dims[i][2]);
+    }
+
+
+    QRectF bounds = profileScene->itemsBoundingRect();
+    qDebug() << bounds;
+
+    //ui->profileView->fitInView(pix);
+
 }
 
 void beam::reDrawCPanel()
@@ -171,7 +471,7 @@ void beam::reDrawCPanel()
 
     // ----- FORCES -----
     QTreeWidgetItem *allForces = new QTreeWidgetItem();
-    allForces->setText(0,"Forces");
+    allForces->setText(0,tr("Forces"));
     allForces->setIcon(0,QIcon(":/files/images/force.svg"));
     allForces->setData(0,Qt::UserRole,QVariant(1));
     ui->treeWidget->addTopLevelItem(allForces);
@@ -192,7 +492,7 @@ void beam::reDrawCPanel()
 
     // ----- SUPPORTS -----
     QTreeWidgetItem *allSupports = new QTreeWidgetItem();
-    allSupports->setText(0,"Supports");
+    allSupports->setText(0,tr("Supports"));
     allSupports->setIcon(0,QIcon(":/files/images/support.svg"));
     allSupports->setData(0,Qt::UserRole,QVariant(2));
     ui->treeWidget->addTopLevelItem(allSupports);
@@ -200,7 +500,7 @@ void beam::reDrawCPanel()
     for(int i=0; i<itemCount; ++i)
     {
         QTreeWidgetItem *item = new QTreeWidgetItem();
-        item->setText(0,"Mesnet " + QString::number(i));
+        item->setText(0,tr("Support ") + QString::number(i));
         item->setData(0,Qt::UserRole,QVariant(i));
         allSupports->addChild(item);
         const QVariant var1 = QVariant::fromValue<QTreeWidgetItem*>(item);
@@ -211,7 +511,7 @@ void beam::reDrawCPanel()
 
     // ----- FORCES -----
     QTreeWidgetItem *allDistLoads = new QTreeWidgetItem();
-    allDistLoads->setText(0,"Distributed Loads");
+    allDistLoads->setText(0,tr("Distributed Loads"));
     allDistLoads->setIcon(0,QIcon(":/files/images/distload.png"));
     allDistLoads->setData(0,Qt::UserRole,QVariant(3));
     ui->treeWidget->addTopLevelItem(allDistLoads);
@@ -242,6 +542,7 @@ QGraphicsItem *beam::drawSupport(Support s)
     float xpos = LFactor * s.posX;
     QPen blackPen(Qt::black);
     blackPen.setWidth(2);
+
 QList<QGraphicsItem*> supItms;
 
 
@@ -249,26 +550,40 @@ QList<QGraphicsItem*> supItms;
     Triangle.append(QPointF(xpos-20.,ypos+40));
     Triangle.append(QPointF(xpos+0.,ypos+0));
     Triangle.append(QPointF(xpos+20.,ypos+40));
-    QGraphicsPolygonItem *tri = scene->addPolygon(Triangle,blackPen,QBrush(Qt::BDiagPattern));
-    QGraphicsRectItem *rect;
-    if(s.type == Support::NOFREE)
-    {
-        rect = scene->addRect(xpos-40,ypos+40,80,10,QPen(),QBrush(Qt::Dense3Pattern));
-    }else if(s.type == Support::XFREE)
-    {
 
+    if(s.type == Support::FIXED)
+    {
+        blackPen.setWidth(4);
+        QGraphicsLineItem *line = scene->addLine(xpos,40,xpos,-55,blackPen);
+
+        blackPen.setBrush(QBrush(Qt::BDiagPattern));
+        blackPen.setWidth(16);
+        blackPen.setCapStyle(Qt::FlatCap);
+        QGraphicsLineItem *brush = scene->addLine(xpos-10,40,xpos-10,-55,blackPen);
+        supItms.append(line);
+        supItms.append(brush);
+    }else if(s.type == Support::PINNED)
+    {
+        QGraphicsPolygonItem *tri = scene->addPolygon(Triangle,blackPen,QBrush(Qt::BDiagPattern));
+        QGraphicsRectItem *rect;
+        rect = scene->addRect(xpos-40,ypos+40,80,10,QPen(),QBrush(Qt::Dense3Pattern));
+        supItms.append(rect);
+        supItms.append(tri);
+    }else if(s.type == Support::ROLLER)
+    {
+        QGraphicsPolygonItem *tri = scene->addPolygon(Triangle,blackPen,QBrush(Qt::BDiagPattern));
+        QGraphicsRectItem *rect;
         rect = scene->addRect(xpos-40,ypos+50,80,10,QPen(),QBrush(Qt::Dense3Pattern));
         supItms.append(scene->addEllipse(xpos-15,ypos+40,10,10));
         supItms.append(scene->addEllipse(xpos+5,ypos+40,10,10));
+        supItms.append(rect);
+        supItms.append(tri);
     }
 
-    supItms.append(rect);
-    supItms.append(tri);
+
 
     QGraphicsItemGroup *group = scene->createItemGroup(supItms);
     group->setFlag(QGraphicsItem::ItemIsSelectable);
-
-    group->update();
 
     reDrawCPanel();
     return group;
@@ -301,11 +616,17 @@ void beam::addDistLoad(DistLoad dl)
     distributedloads.append(dl);
 }
 
+bool supportLessThan(const Support &s1,const Support &s2)
+{
+    return s1.posX < s2.posX;
+}
+
 void beam::addSupport(Support support)
 {
     support.item = drawSupport(support);
     supports.append(support);
-
+    qSort(supports.begin(), supports.end(), supportLessThan);
+    supports;
 }
 
 void beam::addMoment(Moment moment)
@@ -404,178 +725,268 @@ QGraphicsItem *beam::drawSingleForce(Force force)
 
 QGraphicsItem *beam::drawDistLoad(DistLoad dl)
 {
-    double HFactor = LFactor * 0.1;
     QPen blackPen(Qt::black);
     blackPen.setWidth(2);
+
+    double HFactor = LFactor * 0.1;
     double x1pos = LFactor * dl.x1;
 
-    QPainterPath path;
-    path.moveTo(x1pos, - 15 -HFactor * mathSolve<double>(dl.f.toStdString(),dl.x1));
+    double x2pos = LFactor * dl.x2;
 
-    QList<QGraphicsItem*> arrowItms;
-    QList<QGraphicsItem*> allArrowItms;
+    double arrowxPercent = 0.1;
 
-    for(double x=dl.x1; x<=dl.x2; x= x+ 0.1)
+    QList<QGraphicsItem*> allItems;
+
+    QPainterPath path(QPointF(x1pos,-15-HFactor * dl.data[0]));
+
+    if(dl.type == DistLoad::UNIFORM)
     {
-
-        double y = mathSolve<double>(dl.f.toStdString(),x);
-        double xpos = LFactor * x;
-        qDebug() << x << xpos << y;
-        path.lineTo(xpos, - 15 - HFactor * y);
-
-        QPolygonF Triangle;
-        Triangle.append(QPointF(10,-3));
-        Triangle.append(QPointF(0,0));
-        Triangle.append(QPointF(10,+3));
-        QLineF line(10,0,HFactor * y - 1,0);
-
-
-        arrowItms.append(scene->addLine(line,blackPen));
-        arrowItms.append(scene->addPolygon(Triangle,QPen(),QBrush(QColor("#000"))));
-
-        QGraphicsItemGroup *gr = scene->createItemGroup(arrowItms);
-        gr->setRotation(-90);
-        gr->setPos(xpos,-15);
-
-        allArrowItms.append(gr);
-        arrowItms.clear();
+        path.moveTo(x1pos,-50);
+        path.lineTo(x2pos,-50);
+        allItems.append(scene->addPath(path,blackPen));
+    }else if(dl.type == DistLoad::TRAPEZOIDAL)
+    {
+        path.lineTo(x2pos,-15-HFactor * dl.data[1]);
+        allItems.append(scene->addPath(path,blackPen));
     }
 
 
-    QGraphicsPathItem *curve = scene->addPath(path,blackPen);
+    // drawing arrows
+    for(qreal i=0;i <= 1;i = i + arrowxPercent)
+    {
+        QPointF cp = path.pointAtPercent(i); // current point
 
+        QPolygonF Triangle;
+        Triangle.append(QPointF(cp.x()-3,-25));
+        Triangle.append(QPointF(cp.x(),-15));
+        Triangle.append(QPointF(cp.x()+3,-25));
+        QLineF line(cp, QPointF(cp.x(),-25));
 
-    allArrowItms.append(curve);
+        allItems.append(scene->addLine(line,blackPen));
+        allItems.append(scene->addPolygon(Triangle,QPen(),QBrush(QColor("#000"))));
+    }
 
-    QGraphicsItemGroup *group = scene->createItemGroup(allArrowItms);
+    QGraphicsTextItem *title= scene->addText( QString::number(dl.data[0]) + " N/m" );
+    title->setPos(path.boundingRect().center().x(),path.boundingRect().center().y() - 30);
+
+    allItems.append(title);
+
+    QGraphicsItemGroup *group = scene->createItemGroup(allItems);
     group->setPos(0,0);
     group->setFlag(QGraphicsItem::ItemIsSelectable);
     return group;
-    /*QGraphicsTextItem *title= scene->addText("dad");
-    title->setFlags(QGraphicsItem::ItemIsSelectable | QGraphicsItem::ItemIsFocusable | QGraphicsItem::ItemIsMovable);
-    title->setTextInteractionFlags(Qt::TextEditorInteraction);
-    title->setPos(100, 200);
-*/
 }
 
 bool sortResForces(const QPair<float,float>& e1, const QPair<float,float>& e2) {
     return e1.first < e2.first;
 }
 
+using namespace arma;
+
+mat stfMatrix(double L,double E,double A,double I)
+{
+    mat stf(4,4,fill::zeros);
+
+
+    stf << 12  << 6*L   << -12  << 6*L << endr
+        << 6*L << 4*L*L << -6*L << 2*L*L << endr
+        << -12 << -6*L  << 12   << -6*L << endr
+        << 6*L << 2*L*L << -6*L << 4*L*L << endr;
+
+    stf *= E*I*std::pow(L,-3);
+
+    return stf;
+}
+
 void beam::on_solveBtn_clicked()
 {
+
     resForces.clear();
 
-    //QMessageBox::information(this,"Eksik Veri","Çözüm için yeterli sayıda mesnet yok. Lütfen mesnet ekleyin ve tekrar deneyin.");
+    if(supports.size()<2){QMessageBox::warning(this,tr("Incompleted Data"),tr("There are no enough supports to solution.Please add a support and try again!")); return;}
 
-    if(supports.size()<2){QMessageBox::warning(this,"Incompleted Data","There are no enough supports to solution.Please add a support and try again!"); return;}
+    int divs = 1000;
 
     const int fcount = forces.size();
     const int dlcount = distributedloads.size();
+    const int supCount = supports.size();
 
-    float totalX=0,totalY=0,totalMoment=0;
+    vec nodes( supCount + fcount + dlcount*divs ); // nodes(xpos)
 
+    mat boundconds(0,3);
 
+    mat loads(0,3); // initial loads(nodenum, dof, force)
 
-    qDebug() << "-----KUVVETLER-----\n";
+    unsigned int n = 0;
 
-    for (int i = 0; i < dlcount; ++i)
-    {
-        DistLoad dl = distributedloads.at(i);
-
-        double dlArea = calcIntegral(dl.x1,dl.x2,dl.f.toStdString(),200);
-        totalY += -dlArea;
-
-        double centerofGravityMoment = calcIntegral(dl.x1,dl.x2,dl.f.toStdString().append("*x"),200);
-
-
-        QPair<float,float> res;
-        res.first = centerofGravityMoment / dlArea;
-        res.second = -dlArea;
-        resForces.append(res);
-
-        totalMoment += -dlArea * res.first;
-
-        // -----------------------------
-
-
-        supports.at(i).posX;
-
-        double s2fy = dlArea * res.first / (supports.at(i+1).posX - supports.at(i).posX);
-        //double s1fy = dlArea-s2fy;
-
-        double qmax = mathSolve<double>(dl.f.toStdString(),dl.x2);
-
-
-        double p = calcIntegral(0.5,dl.x2,dl.f.toStdString().append("*x"),200)/calcIntegral(0.5,dl.x2,dl.f.toStdString(),200);
-        double l = (supports.at(i+1).posX-supports.at(i).posX);
-
-        qDebug() << "P == " << p;
-        qDebug() << "**R == " << (6 / (l * l)) * calcIntegral(0,
-                                     l,
-                                     QString::number(s2fy)
-                                     .append("*(x^2)-")
-                                     .append(QString::number(qmax))
-                                     .append("*(x^2)*")
-                                     .append(QString::number((p-0.5)*dl.x2/0.5))
-                                     .append("*x").toStdString(),200);
-
-        supports.at(i+1).posX;
-
-
-        // -----------------------------
+    for (int i = 0; i < supCount; i++){
+        nodes(n) = supports[i].posX;
+        n++;
     }
 
+    for (int i = 0; i < fcount; i++){
+        nodes(n) = forces[i].posX;
+        n++;
+    }
 
-    for (int i = 0; i < fcount; ++i)
-    {
-        Force f = forces.at(i);
-        float rad = qDegreesToRadians(float(f.angle));
-        float fx,fy;
+    for (int i = 0; i < dlcount; i++){
 
-        fx = f.mag * qCos(rad);
-        fy = f.mag * qSin(rad);
+        double l = distributedloads[i].x2 - distributedloads[i].x1;
+        double delta = l /divs;
 
-        if(f.directionUp==false)
+        for(int j=0;j<divs;j++)
         {
-            fx = -fx;
-            fy = -fy;
+            nodes(n) = distributedloads[i].x1 + delta*0.5 + j*delta;
+            n++;
         }
-
-        totalX += fx;
-        totalY += fy;
-
-        totalMoment += fy * f.posX;
-
-        QPair<float,float> res;
-        res.first = f.posX;
-        res.second = fy;
-        resForces.append(res);
     }
 
 
-    qDebug() << "Mesnet Tepkisi 1(Ny):" << totalMoment / realBeamL -totalY
-             << "\nMesnet Tepkisi 2(Ny):" << -totalMoment / realBeamL;
+    nodes = sort(nodes);
 
-    Support s1=supports.at(0),s2=supports.at(1);
-    s1.fy = totalMoment / realBeamL -totalY;
-    s2.fy = -totalMoment / realBeamL;
-    supports.replace(0,s1);
-    supports.replace(1,s2);
+    for (int i = 0; i < supCount; i++){
 
-    QPair<float,float> res;
-    res.first = supports.at(0).posX;
-    res.second = supports.at(0).fy;
-    resForces.append(res);
+        uvec t = arma::find(nodes == supports[i].posX);
 
-    res.first = supports.at(1).posX;
-    res.second = supports.at(1).fy;
-    resForces.append(res);
+        boundconds.insert_rows(boundconds.n_rows,((rowvec){t(0),1,0}));
 
-    qSort(resForces.begin(), resForces.end(), sortResForces);
+        if(supports[i].type == Support::FIXED)
+        {
+            boundconds.insert_rows(boundconds.n_rows,((rowvec){t(0),2,0}));
+        }
+    }
 
-    plotDiagrams(resForces);
-    ui->widget->show();
+    for (int i = 0; i < fcount; i++){
+
+        uvec t = arma::find(nodes == forces[i].posX);
+
+        loads.insert_rows(loads.n_rows,((rowvec){t(0),1,forces[i].mag}));
+        loads.insert_rows(loads.n_rows,((rowvec){t(0),2,0}));
+    }
+
+    for (int i = 0; i < dlcount; i++){
+
+        double l = distributedloads[i].x2 - distributedloads[i].x1;
+        double delta = l /divs;
+
+        double f = distributedloads[i].data[0] * l / divs ;
+        double tanTheta = (distributedloads[i].data[1]-distributedloads[i].data[0]) / l;
+
+        for(int j=0;j<divs;j++)
+        {
+            uvec t = arma::find(nodes == (distributedloads[i].x1 + delta*0.5 + j*delta));
+
+            if(distributedloads[i].type == DistLoad::TRAPEZOIDAL)
+            {
+                double f = tanTheta * (delta*0.5 + j*delta) + distributedloads[i].data[0];
+            }
+
+            loads.insert_rows(loads.n_rows,((rowvec){t(0),1,f}));
+            loads.insert_rows(loads.n_rows,((rowvec){t(0),2,0}));
+        }
+    }
+
+    // global stiffness matrix (zero)
+    mat Kglobal(nodes.n_rows*2,nodes.n_rows*2,fill::zeros);
+
+    // Force-Moment, Displacement-TwistAngle, specified dofs, unknown dofs vector
+    colvec P(nodes.n_rows*2,fill::zeros);
+    colvec u(nodes.n_rows*2,fill::zeros);
+    ucolvec sdofs(boundconds.n_rows,fill::zeros);
+    ucolvec udofs = linspace<ucolvec>(0,nodes.n_rows*2-1,nodes.n_rows*2);
+
+
+
+    //nodes.print("Nodes:");
+    //loads.print("Loads:");
+    //boundconds.print("Boundary Conditions:");
+    //E.print("Elasticity Modulus:");
+    //A.print("Area:");
+    //I.print("Second Moment of Mass");
+    //Kglobal.print("Global Stiffness Matrix(initial):");
+    //sdofs.print("sdofs(initial):");
+    //udofs.print("udofs:");
+
+    int init = 0;
+    for(unsigned int i=0; i < nodes.n_rows-1; i++)
+    {
+        Kglobal(init,init,SizeMat(4,4)) += stfMatrix( ( nodes(i+1,0) - nodes(i,0)  ),activeMaterial.E,1,activeMaterial.Ixx);
+        init += 2;
+    }
+
+    for(unsigned int i=0;i<boundconds.n_rows;i++)
+    {
+      int thisdof = 2*boundconds(i,0) + boundconds(i,1) - 1;
+      sdofs(i) = thisdof;
+      u(thisdof) = boundconds(i,2);
+    }
+
+    //sdofs.print("ben sdofs:");
+    for(int i=sdofs.n_rows-1; i >=0; i--)
+    {
+        udofs.shed_row(sdofs.at(i));
+    }
+
+    for (unsigned int i=0;i<loads.n_rows;i++)
+    {
+      P(2*loads(i,0) + loads(i,1) - 1) = loads(i,2);
+    }
+
+    //P.print("P Vector:");
+
+    //udofs.shed_rows(sdofs);
+    //udofs.print("dvxbcnvmjh");
+
+    //Kglobal.print("Kglobal");
+    //Kglobal(udofs,udofs).print("udofff");
+
+
+    u(udofs) = solve( Kglobal(udofs,udofs), (P(udofs)-Kglobal(udofs,sdofs)*u(sdofs) ), solve_opts::equilibrate);
+    u.print("uuu:::");
+    P(sdofs) = Kglobal.rows(sdofs)*u;
+
+    P.print("PPPPP:");
+
+    drawElasticCurve(u,nodes);
+    drawSlopeDiagram(u,nodes);
+    drawReactions(P,nodes);
+    drawShearDiagram(P,nodes);
+
+    disp_nodes = nodes;
+    disp_u = u;
+    disp_P =P;
+
+    double umax=0;
+    int umaxpos=0;
+
+    for(int i = 0; i<u.n_rows;i=i+2)
+    {
+
+        if(qAbs(u(i))>qAbs(umax))
+        {
+            umax=u(i);
+            umaxpos=i;
+        }
+    }
+
+    double tmax=0;
+    int tmaxpos=0;
+
+    for(int i = 1; i<u.n_rows;i=i+2)
+    {
+
+        if(qAbs(u(i))>qAbs(tmax))
+        {
+            tmax=u(i);
+            tmaxpos=i;
+        }
+    }
+
+
+
+    ui->statusbar->showMessage("Maksimum Eğim (x,θ):" + QString::number(nodes((tmaxpos-1)/2)) + " m, " + QString::number(tmax) + " rad"
+                               " | Maksimum Sehim (x,γ):" + QString::number(nodes(umaxpos/2)) + " m, " + QString::number(umax) + " m");
+
 }
 
 
@@ -585,7 +996,7 @@ void beam::on_treeWidget_currentItemChanged(QTreeWidgetItem *current, QTreeWidge
 
     scene->clearSelection();
     variantManager->clear();
-    topItem = variantManager->addProperty(QtVariantPropertyManager::groupTypeId(), tr("Özellikler"));
+    topItem = variantManager->addProperty(QtVariantPropertyManager::groupTypeId(), tr("Properties"));
 
     if(current){
 
@@ -604,28 +1015,23 @@ void beam::on_treeWidget_currentItemChanged(QTreeWidgetItem *current, QTreeWidge
                 {
                     Support s = supports.at(pos);
                     s.item->setSelected(true);
-
                     QtVariantProperty *item = variantManager->addProperty(QVariant::Bool, QLatin1String("Bool Property"));
+
+/*
                     item->setValue(true);
                     topItem->addSubProperty(item);
 
+*/
 
-                    item = variantManager->addProperty(QVariant::Color, tr("Brush Color"));
-                    item->setValue(qgraphicsitem_cast<QGraphicsPolygonItem*>(s.item->childItems().at(0))->brush());
-                    topItem->addSubProperty(item);
 
-                    item = variantManager->addProperty(QVariant::Color, tr("Pen Color"));
-                    item->setValue(qgraphicsitem_cast<QGraphicsPolygonItem*>(s.item->childItems().at(0))->pen());
-                    topItem->addSubProperty(item);
-
-                    item = variantManager->addProperty(QVariant::String, QLatin1String(" String Property"));
-                    item->setValue("Value");
+                    item = variantManager->addProperty(QVariant::String, tr("Position"));
+                    item->setValue(s.posX);
                     topItem->addSubProperty(item);
 
                     item = variantManager->addProperty(QtVariantPropertyManager::enumTypeId(),
-                                    tr("Support Type"));
+                                    tr("Type"));
                     QStringList enumNames;
-                    enumNames << "All Free" << "Y Free" << "X Free" << "No Free";
+                    enumNames << tr("FIXED") << tr("ROLLER") << tr("PINNED");
                     item->setAttribute(QLatin1String("enumNames"), enumNames);
                     item->setValue(2);
                     topItem->addSubProperty(item);
@@ -653,62 +1059,147 @@ void beam::on_treeWidget_currentItemChanged(QTreeWidgetItem *current, QTreeWidge
 
 void beam::propertyValueChanged(QtProperty *property, const QVariant &value)
 {
+    /*if (property->propertyName() == "Position")
+    {
+        if(!value.isNull()){
+        supports[ui->treeWidget->selectedItems().at(0)->data(0,Qt::UserRole).toInt()].posX = value.toDouble();
+        redrawComponents();
+        }
+    }*/
         if (property->propertyName() == "Brush Color") {
-                qgraphicsitem_cast<QGraphicsPolygonItem*>(scene->selectedItems().at(0)->childItems().at(0))->setBrush(QBrush(value.value<QColor>()));
+                qgraphicsitem_cast<QAbstractGraphicsShapeItem*>(scene->selectedItems().at(0)->childItems().at(0))->setBrush(QBrush(value.value<QColor>()));
         }else if (property->propertyName() == "Pen Color") {
-            qgraphicsitem_cast<QGraphicsPolygonItem*>(scene->selectedItems().at(0)->childItems().at(0))->setPen(QPen(value.value<QColor>()));
+                qgraphicsitem_cast<QAbstractGraphicsShapeItem*>(scene->selectedItems().at(0)->childItems().at(0))->setPen(QPen(value.value<QColor>()));
         }
 }
 
-void beam::plotDiagrams(QList<QPair<double, double> > points)
+void beam::drawElasticCurve(arma::vec u, arma::vec nodes)
 {
-    int pointCount = points.count();
-    QVector<double> x(pointCount),y(pointCount);
+    scene->removeItem(elasticCurve);
 
-    double totalY=0;
-    for(int i=0;i<pointCount;++i)
+    QPainterPath path(QPointF(0,0));
+
+    for(int i = 0;i<u.n_rows;i+=2)
     {
-
-        x.append(points.at(i).first);
-        y.append(totalY);
-        totalY += points.at(i).second;
-        qDebug() << x.last() << y.last();
-        x.append(points.at(i).first);
-        y.append(totalY);
-        qDebug() << x.last() << y.last();
-
+        path.lineTo(nodes(i/2)*LFactor,u(i)*scaleFactor+2);
     }
 
-    QCPCurve *newCurve = new QCPCurve(ui->widget->xAxis, ui->widget->yAxis);
-    newCurve->setData(x, y);
-    newCurve->setScatterStyle(QCPScatterStyle(QCPScatterStyle::ssCircle, QPen(Qt::black), QBrush(Qt::white), 5));
-    newCurve->setBrush(QBrush("#F2FF00"));
-    ui->widget->addPlottable(newCurve);
-    ui->widget->setInteractions(QCP::iRangeDrag | QCP::iRangeZoom | QCP::iSelectAxes |
-                                QCP::iSelectLegend | QCP::iSelectPlottables);
+    QPen ppen(Qt::DashLine);
+    ppen.setColor(QColor("#2096BD"));
+    ppen.setWidth(3);
 
-    ui->widget->xAxis->setLabel("x(m)");
-    ui->widget->yAxis->setLabel("V(N)");
 
-    ui->widget->xAxis->setRange(-100, 100);
-    ui->widget->yAxis->setRange(-100, 100 );
-    ui->widget->axisRect()->setupFullAxesBox();
-    ui->widget->rescaleAxes();
-    ui->widget->replot();
-
-    connect(ui->widget, SIGNAL(mouseMove(QMouseEvent*)),this,SLOT(showPointToolTip(QMouseEvent*)));
+    elasticCurve = scene->addPath(path,ppen,QBrush(QColor(143,217,242,80)));
 
 }
 
-void beam::showPointToolTip(QMouseEvent *event)
+void beam::drawSlopeDiagram(arma::vec u,arma::vec nodes)
 {
+    scene->removeItem(slopeDiagram);
 
-    double x = ui->widget->xAxis->pixelToCoord(event->pos().x());
-    double y = ui->widget->yAxis->pixelToCoord(event->pos().y());
+    QPainterPath path(QPointF(0,0));
 
-    setToolTip(QString(tr("Position: (%1 , %2)")).arg(x).arg(y));
+    for(int i = 1;i<u.n_rows;i+=2)
+    {
+        path.lineTo(nodes((i-1)/2)*LFactor,u(i)*scaleFactor-2);
+    }
+
+    QPen ppen(Qt::DashLine);
+    ppen.setColor(QColor("#E0CB26"));
+    ppen.setWidth(3);
+
+
+    slopeDiagram = scene->addPath(path,ppen,QBrush(QColor(252,234,96,80)));
 
 }
+
+void beam::drawMomentDiagram(arma::vec p,arma::vec nodes)
+{
+    scene->removeItem(momentDiagram);
+
+    QPainterPath path(QPointF(0,0));
+
+    double moment = 0;
+
+    for(int i = 1;i<p.n_rows;i+=2)
+    {
+
+        moment += p(i);
+        if(i>1){
+            moment += p(i-1);
+        }
+
+        path.lineTo(nodes((i-1)/2)*LFactor,moment*0.1);
+    }
+
+    QPen ppen(Qt::DashLine);
+    ppen.setColor(QColor("#FA5700"));
+    ppen.setWidth(3);
+
+    momentDiagram = scene->addPath(path,ppen,QBrush(QColor(255,124,54,80)));
+}
+
+void beam::drawShearDiagram(arma::vec p,arma::vec nodes)
+{
+    scene->removeItem(shearDiagram);
+
+    QPainterPath path(QPointF(0,0));
+
+    double y=0;
+
+    for(int i = 0;i<p.n_rows;i+=2)
+    {
+        y += p(i);
+        path.lineTo(nodes(i/2)*LFactor,y);
+        p(i) = y;
+    }
+
+    QPen ppen(Qt::DashLine);
+    ppen.setColor(QColor("#26AD00"));
+    ppen.setWidth(3);
+
+    shearDiagram = scene->addPath(path,ppen,QBrush(QColor(67,204,29,80)));
+
+    drawMomentDiagram(p,nodes);
+}
+
+void beam::drawReactions(arma::vec p,arma::vec nodes)
+{
+    QList<QGraphicsItem*> reactionList;
+
+    foreach(QGraphicsItem *item,reactions->children())
+    {
+        scene->removeItem(item);
+    }
+
+    QPen bluePen(Qt::blue);
+    bluePen.setWidth(3);
+
+    int supCount = supports.size();
+
+    for (int i = 0; i < supCount; i++){
+
+        uvec t = arma::find(nodes == supports[i].posX);
+
+        QGraphicsTextItem *txt = scene->addText(QString::number(p(2*t(0))).append(" N"));
+
+        double supPos = supports[i].item->boundingRect().bottom();
+        QPolygonF Triangle;
+        Triangle.append(QPointF(supports[i].posX*LFactor,supPos));
+        Triangle.append(QPointF(supports[i].posX*LFactor-10,supPos+15));
+        Triangle.append(QPointF(supports[i].posX*LFactor+10,supPos+15));
+        QGraphicsLineItem *line = scene->addLine(supports[i].posX*LFactor,supPos+15,supports[i].posX*LFactor,supPos+45,bluePen);
+        QGraphicsPolygonItem *tri = scene->addPolygon(Triangle,bluePen,QBrush(QColor("blue")));
+        txt->setDefaultTextColor(Qt::blue);
+        txt->setPos(line->boundingRect().bottomRight());
+        reactionList.append(line);
+        reactionList.append(tri);
+        reactionList.append(txt);
+    }
+    reactions = scene->createItemGroup(reactionList);
+}
+
+
 void beam::on_treeWidget_customContextMenuRequested(const QPoint &pos)
 {
     QTreeWidget *tree = ui->treeWidget;
@@ -777,6 +1268,11 @@ void beam::componentsActionDelete()
     }
 }
 
+void beam::testt(QGraphicsSceneHoverEvent *ev)
+{
+    qDebug("test");
+}
+
 void beam::on_actionForce_triggered()
 {
     QDialog dialog(this);
@@ -802,6 +1298,8 @@ void beam::on_actionForce_triggered()
 
     QDialogButtonBox buttonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel,
                                Qt::Horizontal, &dialog);
+    buttonBox.button(QDialogButtonBox::Ok)->setText(tr("Ok"));
+    buttonBox.button(QDialogButtonBox::Cancel)->setText(tr("Cancel"));
     form.addRow(&buttonBox);
     QObject::connect(&buttonBox, SIGNAL(accepted()), &dialog, SLOT(accept()));
     QObject::connect(&buttonBox, SIGNAL(rejected()), &dialog, SLOT(reject()));
@@ -823,37 +1321,42 @@ void beam::on_actionForce_triggered()
 
 void beam::on_actionDistributed_Load_triggered()
 {
-    QDialog dialog(this);
-    dialog.setWindowTitle(tr("Add Distributed Load"));
-    QFormLayout form(&dialog);
+    distloaddialog = new QDialog(this);
+    distui.setupUi(distloaddialog);
 
-    QLineEdit *x1 = new QLineEdit(&dialog);
-    QLineEdit *x2 = new QLineEdit(&dialog);
-    QLineEdit *f = new QLineEdit(&dialog);
+    distloaddialog->setFixedSize(distloaddialog->size());
 
-    x1->setValidator(new PointValidator(0,realBeamL,4,this));
-    x2->setValidator(new PointValidator(0,realBeamL,4,this));
+    distui.un_q->setValidator(new PointValidator(0,999999,4,this));
 
-    form.addRow(tr("Position [x1] (m):"),x1);
-    form.addRow(tr("Position [x2] (m):"),x2);
-    form.addRow(tr("Formula f(x) : "),f);
+    distui.buttonBox->button(QDialogButtonBox::Ok)->setText(tr("Ok"));
+    distui.buttonBox->button(QDialogButtonBox::Cancel)->setText(tr("Cancel"));
 
-    QDialogButtonBox buttonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel,
-                               Qt::Horizontal, &dialog);
-    form.addRow(&buttonBox);
-    QObject::connect(&buttonBox, SIGNAL(accepted()), &dialog, SLOT(accept()));
-    QObject::connect(&buttonBox, SIGNAL(rejected()), &dialog, SLOT(reject()));
+    if (distloaddialog->exec() == QDialog::Accepted) {
 
-    dialog.setFixedSize(form.sizeHint());
-
-    if (dialog.exec() == QDialog::Accepted) {
             DistLoad dl;
-            dl.x1 = x1->text().toDouble();
-            dl.x2 = x2->text().toDouble();
-            dl.f = f->text();
+
+            if(distui.tabWidget->currentIndex()==0){
+                dl.type = DistLoad::UNIFORM;
+                dl.data[0] = distui.un_q->text().toDouble();
+                dl.x1 = distui.un_x1->text().toDouble();
+                dl.x2 = distui.un_x2->text().toDouble();
+                //distui.un_q
+            }
+            else if(distui.tabWidget->currentIndex()==1){
+                dl.type = DistLoad::TRAPEZOIDAL;
+                dl.data[0] = distui.tr_q1->text().toDouble();
+                dl.data[1] = distui.tr_q2->text().toDouble();
+                dl.x1 = distui.tr_x1->text().toDouble();
+                dl.x2 = distui.tr_x2->text().toDouble();
+            }
+
             addDistLoad(dl);
             reDrawCPanel();
+    }else{
+
     }
+
+    delete distloaddialog;
 }
 
 void beam::on_actionMoment_triggered()
@@ -871,7 +1374,8 @@ void beam::on_actionMoment_triggered()
 
     QDialogButtonBox buttonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel,
                                Qt::Horizontal, &dialog);
-
+    buttonBox.button(QDialogButtonBox::Ok)->setText(tr("Ok"));
+    buttonBox.button(QDialogButtonBox::Cancel)->setText(tr("Cancel"));
     form.addRow(&buttonBox);
 
     QObject::connect(&buttonBox, SIGNAL(accepted()), &dialog, SLOT(accept()));
@@ -918,4 +1422,75 @@ void beam::on_actionSave_as_triggered()
 void beam::on_actionExit_triggered()
 {
     this->hide();
+}
+
+void beam::printv(std::vector< std::vector<double> > A) {
+    int m = A.size();
+    int n = A.at(0).size();
+    for (int i=0; i<m; i++) {
+        for (int j=0; j<n; j++) {
+            cout << A[i][j] << "\t";
+
+        }
+        cout << "\n";
+    }
+    cout << endl;
+}
+
+void beam::on_actionMaterial_Properties_triggered()
+{
+    materialprops->show();
+    first = true;
+    bg->buttons().at(currentMaterialTab)->setChecked(true);
+}
+
+void beam::on_actionShowElasticCurve_toggled(bool checked)
+{
+    if(checked)
+    {
+        elasticCurve->show();
+    }else{
+        elasticCurve->hide();
+    }
+}
+
+void beam::on_actionShow_Reactions_toggled(bool checked)
+{
+    if(checked)
+    {
+        reactions->show();
+    }else{
+        reactions->hide();
+    }
+
+}
+
+void beam::on_actionShowMomentDiagram_toggled(bool checked)
+{
+    if(checked)
+    {
+        momentDiagram->show();
+    }else{
+        momentDiagram->hide();
+    }
+}
+
+void beam::on_actionShowShearDiagram_toggled(bool checked)
+{
+    if(checked)
+    {
+        shearDiagram->show();
+    }else{
+        shearDiagram->hide();
+    }
+}
+
+void beam::on_actionShowSlopeDiagram_toggled(bool checked)
+{
+    if(checked)
+    {
+        slopeDiagram->show();
+    }else{
+        slopeDiagram->hide();
+    }
 }

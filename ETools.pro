@@ -4,10 +4,13 @@
 #
 #-------------------------------------------------
 
-QT       += core gui svg
+QT       += core gui svg concurrent
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets printsupport
 
+QMAKE_CXXFLAGS += -O2
+
+CONFIG += c++11 static
 TARGET = ETools
 TEMPLATE = app
 include($$PWD/qtpropertybrowser/src/qtpropertybrowser.pri)
@@ -30,10 +33,13 @@ HEADERS  += home.h \
 FORMS    += home.ui \
     tempdist.ui \
     beam.ui \
-    lineform.ui
+    lineform.ui \
+    materialproperties.ui \
+    distributedloaddialog.ui
 
 RESOURCES += \
     resources.qrc
-LIBS += -lmuparser
+
+LIBS += -lmuparser -larmadillo
 
 

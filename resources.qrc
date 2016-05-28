@@ -9,5 +9,20 @@
         <file>images/ok.svg</file>
         <file>images/distload.png</file>
         <file>images/splash.jpg</file>
+        <file>images/loading.gif</file>
+        <file>images/mesh.png</file>
+        <file>images/profiles/profile_i.png</file>
+        <file>images/profiles/profile_full_t.png</file>
+        <file>images/profiles/profile_full_l.png</file>
+        <file>images/profiles/profile_full_i.png</file>
+        <file>images/profiles/profile_t.png</file>
+        <file>images/profiles/profile_l.png</file>
+        <file>images/dist_trapezoidal.png</file>
+        <file>images/dist_uniformload.png</file>
+        <file>images/curve.png</file>
+        <file>images/reactions.png</file>
+        <file>images/material_properties.svg</file>
+        <file>images/beam_analysis_icon.png</file>
+        <file>images/temperature_distribution_icon.png</file>
     </qresource>
 </RCC>

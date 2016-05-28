@@ -18,11 +18,9 @@ public:
     ~home();
 
 private slots:
-    void on_commandLinkButton_7_clicked();
-    void on_commandLinkButton_6_clicked();
-    void on_commandLinkButton_clicked();
-
     void on_actionAbout_triggered();
+    void on_beamAnalysis_clicked();
+    void on_tempDist_clicked();
 
 private:
     Ui::home *ui;
